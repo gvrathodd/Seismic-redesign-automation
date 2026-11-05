@@ -4,49 +4,55 @@
 <meta charset="utf-8">
 <title>Seismic redesign dashboard - IS 13920:2016</title>
 <style>
-  :root { --b:#d9d9d4; --mut:#666; --acc:#3d4bb8; --ok:#1d7a46; --okbg:#e6f4ec; --bad:#b3261e; --badbg:#fdecea; --card:#fafaf8; }
+  :root { --b:#d9d9d4; --mut:#666; --acc:#3d4bb8; --ok:#1d7a46; --okbg:#e6f4ec; --bad:#b3261e; --badbg:#fdecea; --warn:#8a5a00; --warnbg:#fff4dc; --card:#fafaf8; }
   * { box-sizing: border-box; }
   body { font-family: "Segoe UI", Arial, sans-serif; margin: 0; color: #222; background: #fff; font-size: 14px; }
   header { padding: 14px 24px; border-bottom: 1px solid var(--b); display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; }
   header h1 { font-size: 19px; font-weight: 600; margin: 0; }
   header span { color: var(--mut); }
-  main { display: grid; grid-template-columns: 430px 1fr; min-height: calc(100vh - 56px); }
+  main { display: grid; grid-template-columns: 440px 1fr; min-height: calc(100vh - 56px); }
   #inputs { border-right: 1px solid var(--b); padding: 12px 16px 40px; overflow-y: auto; max-height: calc(100vh - 56px); background: var(--card); }
   #outputs { padding: 16px 24px 60px; overflow-y: auto; max-height: calc(100vh - 56px); }
   fieldset { border: 1px solid var(--b); border-radius: 8px; margin: 0 0 12px; padding: 8px 12px 10px; background: #fff; }
   legend { font-weight: 600; padding: 0 4px; }
+  details > summary { cursor: pointer; font-weight: 600; margin: 4px 0; }
   .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 12px; }
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px 10px; }
   label { display: flex; flex-direction: column; font-size: 12px; color: var(--mut); }
   label.chk { flex-direction: row; align-items: center; gap: 6px; color: #222; font-size: 13px; }
   input, select, textarea { font: inherit; font-size: 13px; padding: 4px 6px; border: 1px solid #bbb; border-radius: 5px; color: #222; background: #fff; }
   input[type=number] { width: 100%; }
   textarea { width: 100%; min-height: 150px; font-family: Consolas, monospace; font-size: 12px; }
-  .row { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0; align-items: center; }
   button { font: inherit; padding: 7px 14px; border-radius: 6px; border: 1px solid #999; background: #fff; cursor: pointer; }
   button.primary { background: var(--acc); color: #fff; border-color: var(--acc); }
   button:disabled { opacity: .6; cursor: wait; }
-  h2 { font-size: 17px; font-weight: 600; margin: 22px 0 8px; }
+  h2 { font-size: 17px; font-weight: 600; margin: 24px 0 8px; }
   h3 { font-size: 15px; font-weight: 600; margin: 14px 0 6px; }
   .hint { color: var(--mut); font-size: 12px; margin: 4px 0; }
   table { border-collapse: collapse; width: 100%; font-size: 13px; }
   th, td { border-bottom: 1px solid #e4e4e0; padding: 5px 8px; text-align: left; vertical-align: top; }
   th { background: #f3f3f0; font-weight: 600; }
-  td.ok { color: var(--ok); font-weight: 600; } td.bad { color: var(--bad); font-weight: 600; }
-  tr.badrow { background: var(--badbg); }
+  td.ok { color: var(--ok); font-weight: 600; } td.fail { color: var(--bad); font-weight: 600; } td.warn { color: var(--warn); font-weight: 600; }
+  tr.fail { background: var(--badbg); } tr.warn { background: var(--warnbg); }
   .note { color: var(--mut); font-size: 12px; }
-  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 12px; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; }
   .card { border: 1px solid var(--b); border-radius: 10px; padding: 12px 14px; background: #fff; }
   .card h3 { margin-top: 0; }
-  .card.good { border-color: #8cc7a4; } .card.warn { border-color: #e2a59f; }
+  .card.good { border-color: #8cc7a4; } .card.bad { border-color: #e2a59f; }
   .badge { display: inline-block; padding: 2px 9px; border-radius: 10px; font-size: 12px; font-weight: 600; }
-  .badge.ok { background: var(--okbg); color: var(--ok); } .badge.bad { background: var(--badbg); color: var(--bad); }
+  .badge.ok { background: var(--okbg); color: var(--ok); } .badge.fail { background: var(--badbg); color: var(--bad); } .badge.warn { background: var(--warnbg); color: var(--warn); }
   .kv { display: grid; grid-template-columns: 95px 1fr; gap: 3px 10px; font-size: 13px; }
   .kv div:nth-child(odd) { color: var(--mut); }
+  .banner { border-radius: 10px; padding: 12px 16px; margin: 8px 0 4px; }
+  .banner.warn { background: var(--warnbg); border: 1px solid #e8c770; }
+  .banner.ok { background: var(--okbg); border: 1px solid #8cc7a4; }
+  .banner.fail { background: var(--badbg); border: 1px solid #e2a59f; }
   ol.log { margin: 4px 0; padding-left: 20px; } ol.log li { margin: 2px 0; }
   .empty { color: var(--mut); padding: 40px 0; }
-  .big { font-size: 22px; font-weight: 600; }
+  .big { font-size: 20px; font-weight: 600; }
   @media (max-width: 1100px) { main { grid-template-columns: 1fr; } #inputs, #outputs { max-height: none; } #inputs { border-right: 0; border-bottom: 1px solid var(--b); } }
-  @media print { #inputs, header button { display: none; } main { display: block; } #outputs { max-height: none; } }
+  @media print { #inputs, .noprint { display: none; } main { display: block; } #outputs { max-height: none; } }
 </style>
 </head>
 <body>
@@ -57,199 +63,233 @@
 <main>
 <section id="inputs">
   <div class="row">
-    <button onclick="loadExample()">Load EQ22 Example 5</button>
+    <button onclick="setForm(EXAMPLE5)">Load EQ22 Example 5</button>
     <button onclick="saveInput()">Save input</button>
-    <label class="chk" style="margin:0"><input type="file" id="loadFile" accept=".json" onchange="loadInput(this)" style="max-width:190px"></label>
+    <input type="file" id="loadFile" accept=".json" onchange="loadInput(this)" style="max-width:180px">
   </div>
-
-  <fieldset><legend>Materials &amp; building</legend>
-    <div class="grid">
-      <label>Concrete fck (MPa)<select id="fck"><option>20</option><option>25</option><option>30</option><option>35</option><option>40</option></select></label>
-      <label>Steel fy (MPa)<select id="fy"><option>415</option><option>500</option><option>550</option></select></label>
-      <label>Building height (m)<input type="number" id="height"></label>
-      <label>Seismic zone<select id="zone"><option>2</option><option>3</option><option>4</option><option>5</option></select></label>
-      <label>No. of storeys<input type="number" id="storeys"></label>
-    </div>
-  </fieldset>
-
-  <fieldset><legend>Column (initial design)</legend>
-    <div class="grid">
-      <label>Size along X, cx (mm)<input type="number" id="cx"></label>
-      <label>Size along Y, cy (mm)<input type="number" id="cy"></label>
-      <label>Bars per X-face, nx (incl. corners)<input type="number" id="nx"></label>
-      <label>Bars per Y-face, ny (incl. corners)<input type="number" id="ny"></label>
-      <label>Total steel Asc (mm²)<input type="number" id="Asc"></label>
-      <label>Cover to bar centre d' (mm)<input type="number" id="dc"></label>
-      <label>Storey height hst (mm)<input type="number" id="hst"></label>
-      <label>Clear height Lu (mm)<input type="number" id="Lu"></label>
-      <label>Smallest long. bar (mm)<input type="number" id="minDia"></label>
-      <label>Hoop diameter (mm)<input type="number" id="tieDia"></label>
-      <label>Clear cover (mm)<input type="number" id="clearCover"></label>
-    </div>
-    <p class="hint">X-faces are the faces of length cx. Bars are taken as equal area (Asc / total).</p>
-  </fieldset>
-
-  <div id="beamInputs"></div>
-
-  <fieldset><legend>Joint</legend>
-    <div class="grid">
-      <label class="chk"><input type="checkbox" id="Xleft"> X beam on left</label>
-      <label class="chk"><input type="checkbox" id="Xright"> X beam on right</label>
-      <label class="chk"><input type="checkbox" id="Yleft"> Y beam on front</label>
-      <label class="chk"><input type="checkbox" id="Yright"> Y beam on back</label>
-      <label class="chk"><input type="checkbox" id="roof"> Roof joint</label>
-      <label>Faces confined by beams<select id="confinedFaces"><option value="auto">Auto (beam ≥ ¾ face)</option><option>4</option><option>3</option><option value="2">2 or fewer</option></select></label>
-    </div>
-  </fieldset>
-
-  <fieldset><legend>Column forces (earthquake load combinations)</legend>
-    <p class="hint">One combination per line: <b>Pu (kN), Mux (kN-m), Muy (kN-m)</b>. Mux = moment from shaking in X. Compression positive.</p>
-    <textarea id="combos"></textarea>
-  </fieldset>
-
-  <fieldset><legend>Options</legend>
-    <label>Column capacity for strong column check (Cl 7.2.1)
-      <select id="PuForMc"><option value="actual">At actual Pu, least of all combinations (code)</option><option value="zero">At Pu = 0 only (EQ22 shortcut – unsafe for heavily loaded columns)</option></select></label>
-    <label style="margin-top:6px">If joint shear fails, try first
-      <select id="strategy"><option value="column,beam,grade">Enlarge column → deepen beam → raise grade</option><option value="beam,column,grade">Deepen beam → enlarge column → raise grade</option><option value="grade,column,beam">Raise grade → enlarge column → deepen beam</option></select></label>
-  </fieldset>
-
+  <p class="hint">Example 5 uses EQ22's sizes, bars and column forces. Beam moments, midspan steel, slab bars, gravity loads and analysis shears are not in EQ22 and are assumed.</p>
+  <div id="form"></div>
   <div class="row"><button class="primary" id="runBtn" onclick="run()">Check &amp; redesign</button></div>
 </section>
-
 <section id="outputs"><div class="empty">Enter the initial design (or load EQ22 Example 5) and press <b>Check &amp; redesign</b>.</div></section>
 </main>
 
 <script src="engine.js"></script>
+<script src="example5.js"></script>
 <script>
 const E = window.SeismicEngine;
 const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
 
-const beamFields = [
-  ["b", "Width b (mm)"], ["D", "Depth D (mm)"], ["cover", "Cover to bar centre (mm)"], ["Lc", "Clear span Lc (mm)"],
-  ["top", "Top steel at face (mm²)"], ["bot", "Bottom steel at face (mm²)"], ["maxDia", "Largest bar (mm)"], ["minDia", "Smallest bar (mm)"],
-  ["MuHog", "Hogging Mu, analysis (kN-m)"], ["MuSag", "Sagging Mu, analysis (kN-m)"], ["VuAnalysis", "Shear Vu, analysis (kN)"], ["wDL_LL", "Gravity load DL+LL (kN/m)"],
-  ["bf", "Slab flange width bf (mm)"], ["Df", "Slab thickness Df (mm)"],
-];
-$("beamInputs").innerHTML = ["X", "Y"].map((d) => `
+// ---------- Form definition ----------
+const num = (id, label) => `<label>${label}<input type="number" id="${id}" step="any"></label>`;
+const chk = (id, label) => `<label class="chk"><input type="checkbox" id="${id}"> ${label}</label>`;
+const sel = (id, label, opts) => `<label>${label}<select id="${id}">${opts.map(([v, t]) => `<option value="${v}">${t}</option>`).join("")}</select></label>`;
+
+const COL = [["cx", "Size along X, cx (mm)"], ["cy", "Size along Y, cy (mm)"], ["nx", "Bars per X-face (incl. corners)"], ["ny", "Bars per Y-face (incl. corners)"],
+  ["cornerDia", "Corner bar dia (mm)"], ["otherDia", "Other bar dia (mm)"], ["Asc", "Total Asc, if dias are 0 (mm²)"], ["dc", "Cover to bar centre d' (mm)"]];
+const COL_MORE = [["hst", "Storey height hst (mm)"], ["kEff", "Effective length factor"], ["tieDia", "Hoop diameter (mm)"], ["clearCover", "Clear cover (mm)"],
+  ["VuX", "Analysis shear, X (kN)"], ["VuY", "Analysis shear, Y (kN)"]];
+const BEAM = [["b", "Width b (mm)"], ["D", "Depth D (mm)"], ["cover", "Cover to bar centroid (mm)"], ["Lc", "Clear span Lc (mm)"],
+  ["top", "Top steel at joint face (mm²)"], ["bot", "Bottom steel at joint face (mm²)"], ["farTop", "Top steel at far end (mm²)"], ["farBot", "Bottom steel at far end (mm²)"],
+  ["midTop", "Top steel at midspan (mm²)"], ["midBot", "Bottom steel at midspan (mm²)"], ["maxDia", "Largest bar (mm)"], ["minDia", "Smallest bar (mm)"],
+  ["MuHog", "Hogging Mu at face (kN-m)"], ["MuSag", "Sagging Mu at face (kN-m)"], ["MuMid", "Sagging Mu at midspan (kN-m)"], ["VuAnalysis", "Shear Vu, analysis (kN)"],
+  ["wDL_LL", "Gravity load DL+LL (kN/m)"], ["bf", "Slab flange width bf (mm)"], ["Df", "Slab thickness Df (mm)"], ["slabAs", "Slab top bars within bf (mm²)"]];
+const SOFT_COL = [["cx", "cx (mm)"], ["cy", "cy (mm)"], ["nx", "Bars per X-face"], ["ny", "Bars per Y-face"], ["Asc", "Asc (mm²)"], ["tieDia", "Hoop dia (mm)"]];
+const SOFT_BEAM = [["b", "b (mm)"], ["D", "D (mm)"], ["top", "Top at face (mm²)"], ["bot", "Bottom at face (mm²)"], ["midTop", "Top midspan (mm²)"], ["midBot", "Bottom midspan (mm²)"]];
+const GRADES = [20, 25, 30, 35, 40];
+
+$("form").innerHTML = `
+  <fieldset><legend>Materials &amp; building</legend><div class="grid">
+    ${sel("fck", "Concrete fck (MPa)", GRADES.map((g) => [g, "M" + g]))}
+    ${sel("fy", "Steel fy (MPa)", [[415, "Fe415"], [500, "Fe500"], [550, "Fe550"]])}
+    ${num("height", "Building height (m)")}
+    ${sel("zone", "Seismic zone", [[2, "II"], [3, "III"], [4, "IV"], [5, "V"]])}
+    ${num("storeys", "No. of storeys")}
+  </div></fieldset>
+
+  <fieldset><legend>Design options</legend><div class="grid">
+    ${num("margin", "Design margin over demand (%)")}
+    ${num("sizeStep", "Size increment (mm)")}
+    ${num("maxColDim", "Largest column side allowed (mm)")}
+    ${num("maxBeamD", "Deepest beam allowed (mm)")}
+    ${chk("lockColumn", "Keep column size (only steel changes)")}
+    ${chk("lockBeams", "Keep beam sizes")}
+    ${chk("allowGrade", "Allow higher concrete grade")}
+  </div>
+  ${sel("strategy", "If joint shear fails, try in this order", [["column,beam,grade", "Enlarge column → deepen beam → raise grade"], ["beam,column,grade", "Deepen beam → enlarge column → raise grade"], ["grade,column,beam", "Raise grade → enlarge column → deepen beam"]])}
+  ${sel("PuForMc", "Column capacity for the 1.4 check", [["actual", "Least over actual combinations (code)"], ["zero", "At Pu = 0 only (EQ22 shortcut)"]])}
+  <p class="hint">Each fix is used until it reaches its limit before the next is tried. A grade change applies to the whole floor.</p>
+  </fieldset>
+
+  <fieldset><legend>Column below the joint (initial design)</legend>
+    <div class="grid">${COL.map(([k, l]) => num("col_" + k, l)).join("")}</div>
+    <div class="grid" style="margin-top:6px">${COL_MORE.map(([k, l]) => num("col_" + k, l)).join("")}</div>
+    <p class="hint">Clear height is taken as hst minus the deepest beam. X-faces are the faces of length cx.</p>
+  </fieldset>
+
+  <fieldset><legend>Column above the joint</legend>
+    ${chk("above_same", "Same section as column below")}
+    <div class="grid" id="aboveFields">${COL.map(([k, l]) => num("above_" + k, l)).join("")}</div>
+    <p class="hint">Axial load above is the 4th value on each load-combination line.</p>
+  </fieldset>
+
+  ${["X", "Y"].map((d) => `
   <fieldset><legend>Beam along ${d} (initial design)</legend>
-    <label class="chk"><input type="checkbox" id="${d}_present"> Beams in ${d} frame into this joint</label>
-    <div class="grid">${beamFields.map(([k, l]) => `<label>${l}<input type="number" id="${d}_${k}"></label>`).join("")}</div>
-    <label class="chk"><input type="checkbox" id="${d}_useFlange"> Use slab as T-beam flange for sagging capacity</label>
-    <p class="hint">Same beam section assumed on both sides of the joint (as in EQ22).</p>
-  </fieldset>`).join("");
+    ${chk(d + "_present", `Beams in ${d} frame into this joint`)}
+    <div class="grid">${BEAM.map(([k, l]) => num(d + "_" + k, l)).join("")}</div>
+    ${chk(d + "_useFlange", "Use slab as T-beam flange for sagging")}
+    <p class="hint">Same section on both sides of the joint. Slab bars yield with the beam and raise its over-strength.</p>
+  </fieldset>`).join("")}
 
-const EXAMPLE5 = {
-  mat: { fck: 20, fy: 415 },
-  building: { height: 15, zone: 5, storeys: 5 },
-  col: { cx: 400, cy: 500, nx: 4, ny: 5, Asc: 5714, dc: 52.5, hst: 3000, Lu: 2500, minDia: 16, tieDia: 8, clearCover: 40 },
-  beams: {
-    X: { present: true, b: 300, D: 500, cover: 68, Lc: 3600, top: 2261, bot: 1746, maxDia: 20, minDia: 16, MuHog: 250, MuSag: 180, VuAnalysis: 150, wDL_LL: 30, useFlange: true, bf: 1300, Df: 125 },
-    Y: { present: true, b: 300, D: 600, cover: 68, Lc: 4500, top: 2374, bot: 1319, maxDia: 20, minDia: 16, MuHog: 369, MuSag: 230, VuAnalysis: 250, wDL_LL: 34.5, useFlange: true, bf: 1633, Df: 125 },
-  },
-  joint: { X: { left: true, right: true }, Y: { left: true, right: true }, roof: false, confinedFaces: "auto", PuForMc: "actual" },
-  combos: [[1252, 204, 0], [1199, 202, 0], [1226, 1, 238], [1475, 255, 0], [1409, 252, 0], [1442, 2, 297], [898, 254, 0], [832, 253, 0], [865, 1, 297]]
-    .map(([Pu, Mux, Muy]) => ({ Pu, Mux, Muy })),
-  options: { jointStrategy: ["column", "beam", "grade"] },
-};
+  <fieldset><legend>Joint</legend><div class="grid">
+    ${chk("Xleft", "X beam on left")}${chk("Xright", "X beam on right")}
+    ${chk("Yleft", "Y beam on front")}${chk("Yright", "Y beam on back")}
+    ${chk("roof", "Roof joint")}
+    ${sel("confinedFaces", "Faces confined by beams", [["auto", "Auto (beam ≥ ¾ face)"], [4, "4"], [3, "3"], [2, "2 or fewer"]])}
+  </div></fieldset>
 
+  <fieldset><legend>Column forces (earthquake combinations)</legend>
+    <p class="hint">One per line: <b>Pu, Mux, Muy, Pu above</b> (kN, kN-m). Mux = moment from shaking in X. Compression positive. Pu above is optional.</p>
+    <textarea id="combos"></textarea>
+  </fieldset>
+
+  <fieldset><legend>Software design (optional)</legend>
+    ${chk("soft_on", "Compare with the design from STAAD / ETABS")}
+    <div class="grid3" style="margin-top:6px">${SOFT_COL.map(([k, l]) => num("soft_col_" + k, "Column " + l)).join("")}</div>
+    ${["X", "Y"].map((d) => `<div class="grid3" style="margin-top:6px">${SOFT_BEAM.map(([k, l]) => num(`soft_${d}_${k}`, `Beam ${d} ${l}`)).join("")}</div>`).join("")}
+    <p class="hint">Checked with the same forces, so the comparison is like for like.</p>
+  </fieldset>
+
+  <fieldset><legend>Rates for cost comparison</legend><div class="grid3">
+    ${num("rate_steel", "Steel (₹/kg)")}${num("rate_formwork", "Formwork (₹/m²)")}
+    ${GRADES.map((g) => num("rate_c" + g, `M${g} (₹/m³)`)).join("")}
+  </div><p class="hint">Defaults are placeholders; enter your current rates.</p></fieldset>
+`;
+
+// ---------- Form <-> state ----------
+function setVal(id, v) { const el = $(id); if (!el) return; if (el.type === "checkbox") el.checked = !!v; else el.value = v ?? ""; }
 function setForm(s) {
-  $("fck").value = s.mat.fck; $("fy").value = s.mat.fy;
-  $("height").value = s.building.height; $("zone").value = s.building.zone; $("storeys").value = s.building.storeys;
-  for (const k of ["cx", "cy", "nx", "ny", "Asc", "dc", "hst", "Lu", "minDia", "tieDia", "clearCover"]) $(k).value = s.col[k];
+  setVal("fck", s.mat.fck); setVal("fy", s.mat.fy);
+  for (const k of ["height", "zone", "storeys"]) setVal(k, s.building[k]);
+  const o = s.options || {};
+  for (const k of ["margin", "sizeStep", "maxColDim", "maxBeamD", "lockColumn", "lockBeams", "allowGrade"]) setVal(k, o[k]);
+  setVal("strategy", (o.jointStrategy || ["column", "beam", "grade"]).join(","));
+  setVal("PuForMc", s.joint.PuForMc === "zero" ? "zero" : "actual");
+  for (const [k] of [...COL, ...COL_MORE]) setVal("col_" + k, k === "VuX" ? (s.col.Vu || {}).X : k === "VuY" ? (s.col.Vu || {}).Y : s.col[k]);
+  const ab = s.colAbove || { same: true };
+  setVal("above_same", ab.same);
+  for (const [k] of COL) setVal("above_" + k, ab.same ? s.col[k] : ab[k]);
   for (const d of ["X", "Y"]) {
-    $(`${d}_present`).checked = s.beams[d].present; $(`${d}_useFlange`).checked = s.beams[d].useFlange;
-    for (const [k] of beamFields) $(`${d}_${k}`).value = s.beams[d][k];
+    const b = s.beams[d];
+    setVal(d + "_present", b.present); setVal(d + "_useFlange", b.useFlange);
+    for (const [k] of BEAM) setVal(`${d}_${k}`, b[k]);
   }
-  $("Xleft").checked = s.joint.X.left; $("Xright").checked = s.joint.X.right;
-  $("Yleft").checked = s.joint.Y.left; $("Yright").checked = s.joint.Y.right; $("roof").checked = s.joint.roof;
-  $("confinedFaces").value = String(s.joint.confinedFaces ?? "auto"); $("PuForMc").value = s.joint.PuForMc || "actual";
-  $("strategy").value = (s.options.jointStrategy || ["column", "beam", "grade"]).join(",");
-  $("combos").value = s.combos.map((c) => `${c.Pu}, ${c.Mux}, ${c.Muy}`).join("\n");
+  setVal("Xleft", s.joint.X.left); setVal("Xright", s.joint.X.right); setVal("Yleft", s.joint.Y.left); setVal("Yright", s.joint.Y.right);
+  setVal("roof", s.joint.roof); setVal("confinedFaces", s.joint.confinedFaces ?? "auto");
+  $("combos").value = s.combos.map((c) => [c.Pu, c.Mux, c.Muy, c.PuAbove].filter((x) => x != null).join(", ")).join("\n");
+  const sw = s.software;
+  setVal("soft_on", !!(sw && sw.on));
+  if (sw) {
+    for (const [k] of SOFT_COL) setVal("soft_col_" + k, sw.col[k]);
+    for (const d of ["X", "Y"]) for (const [k] of SOFT_BEAM) setVal(`soft_${d}_${k}`, sw.beams[d][k]);
+  }
+  const r = s.costs || {};
+  setVal("rate_steel", r.steel); setVal("rate_formwork", r.formwork);
+  for (const g of GRADES) setVal("rate_c" + g, (r.concrete || {})[g]);
 }
 
 function getForm() {
-  const n = (id) => { const v = parseFloat($(id).value); if (!isFinite(v)) throw new Error(`Missing value: ${id}`); return v; };
+  const n = (id, required = true) => {
+    const v = parseFloat($(id).value);
+    if (!isFinite(v)) { if (required) throw new Error(`Enter a value for "${$(id).closest("label").childNodes[0].textContent.trim()}"`); return undefined; }
+    return v;
+  };
+  const c = (id) => $(id).checked;
   const col = {};
-  for (const k of ["cx", "cy", "nx", "ny", "Asc", "dc", "hst", "Lu", "minDia", "tieDia", "clearCover"]) col[k] = n(k);
+  for (const [k] of COL) col[k] = n("col_" + k, !["cornerDia", "otherDia", "Asc"].includes(k)) || 0;
+  for (const [k] of COL_MORE) col[k] = n("col_" + k, !["VuX", "VuY"].includes(k)) || 0;
+  col.Vu = { X: col.VuX, Y: col.VuY };
+  if (!(col.cornerDia > 0 && col.otherDia > 0) && !(col.Asc > 0)) throw new Error("Column: give corner and other bar diameters, or total Asc");
+  const colAbove = { same: c("above_same") };
+  if (!colAbove.same) {
+    for (const [k] of COL) colAbove[k] = n("above_" + k, !["cornerDia", "otherDia", "Asc"].includes(k)) || 0;
+    colAbove.clearCover = col.clearCover; colAbove.hst = col.hst; colAbove.kEff = col.kEff;
+  }
   const beams = {};
   for (const d of ["X", "Y"]) {
-    const present = $(`${d}_present`).checked;
-    beams[d] = { present, useFlange: $(`${d}_useFlange`).checked };
-    for (const [k] of beamFields) beams[d][k] = present ? n(`${d}_${k}`) : parseFloat($(`${d}_${k}`).value) || 0;
+    const present = c(d + "_present");
+    beams[d] = { present, useFlange: c(d + "_useFlange") };
+    for (const [k] of BEAM) beams[d][k] = n(`${d}_${k}`, present && !["farTop", "farBot", "midTop", "midBot", "MuMid", "slabAs", "VuAnalysis"].includes(k)) ?? 0;
+    if (!beams[d].farTop) beams[d].farTop = beams[d].top;
+    if (!beams[d].farBot) beams[d].farBot = beams[d].bot;
+    beams[d].slabCover = 30;
   }
   const combos = $("combos").value.split("\n").map((l) => l.trim()).filter(Boolean).map((l, i) => {
-    const p = l.split(/[,\s\t]+/).map(Number);
-    if (p.length < 3 || p.some((x) => !isFinite(x))) throw new Error(`Load combination line ${i + 1} needs three numbers: Pu, Mux, Muy`);
-    return { Pu: p[0], Mux: p[1], Muy: p[2] };
+    const p = l.split(/[,\s\t]+/).filter(Boolean).map(Number);
+    if (p.length < 3 || p.some((x) => !isFinite(x))) throw new Error(`Load combination line ${i + 1} needs at least three numbers: Pu, Mux, Muy`);
+    return { Pu: p[0], Mux: p[1], Muy: p[2], PuAbove: p[3] ?? p[0] };
   });
   if (!combos.length) throw new Error("Enter at least one load combination");
   const cf = $("confinedFaces").value;
+  const software = { on: c("soft_on"), col: {}, beams: { X: {}, Y: {} } };
+  for (const [k] of SOFT_COL) software.col[k] = n("soft_col_" + k, software.on) ?? 0;
+  for (const d of ["X", "Y"]) for (const [k] of SOFT_BEAM) software.beams[d][k] = n(`soft_${d}_${k}`, software.on && beams[d].present) ?? 0;
+  const concrete = {};
+  for (const g of GRADES) concrete[g] = n("rate_c" + g, false) || 7000;
   return {
     mat: { fck: n("fck"), fy: n("fy") },
     building: { height: n("height"), zone: n("zone"), storeys: n("storeys") },
-    col, beams, combos,
-    joint: { X: { left: $("Xleft").checked, right: $("Xright").checked }, Y: { left: $("Yleft").checked, right: $("Yright").checked },
-      roof: $("roof").checked, confinedFaces: cf === "auto" ? undefined : Number(cf), PuForMc: $("PuForMc").value },
-    options: { jointStrategy: $("strategy").value.split(",") },
+    col, colAbove, beams, combos, software,
+    joint: { X: { left: c("Xleft"), right: c("Xright") }, Y: { left: c("Yleft"), right: c("Yright") }, roof: c("roof"),
+      confinedFaces: cf === "auto" ? undefined : Number(cf), PuForMc: $("PuForMc").value },
+    options: { margin: n("margin", false) || 0, sizeStep: n("sizeStep", false) || 50, maxColDim: n("maxColDim", false) || 900, maxBeamD: n("maxBeamD", false) || 900,
+      lockColumn: c("lockColumn"), lockBeams: c("lockBeams"), allowGrade: c("allowGrade"), jointStrategy: $("strategy").value.split(",") },
+    costs: { steel: n("rate_steel", false) || 80, formwork: n("rate_formwork", false) || 600, concrete },
   };
 }
 
-function loadExample() { setForm(EXAMPLE5); }
 function saveInput() {
   try {
     const blob = new Blob([JSON.stringify(getForm(), null, 2)], { type: "application/json" });
     const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "joint-input.json"; a.click();
   } catch (e) { alert(e.message); }
 }
-function loadInput(el) {
-  const f = el.files[0]; if (!f) return;
-  f.text().then((t) => { const s = JSON.parse(t); s.joint.confinedFaces ??= "auto"; setForm(s); });
+function loadInput(el) { const f = el.files[0]; if (f) f.text().then((t) => setForm(JSON.parse(t))); }
+
+// Software design as a full state (forces and everything else from the input).
+function softwareState(inp) {
+  const sw = inp.software, s = JSON.parse(JSON.stringify(inp));
+  Object.assign(s.col, { cx: sw.col.cx, cy: sw.col.cy, nx: sw.col.nx, ny: sw.col.ny, Asc: sw.col.Asc, cornerDia: 0, otherDia: 0, tieDia: sw.col.tieDia || s.col.tieDia });
+  for (const d of ["X", "Y"]) if (s.beams[d].present) {
+    const b = sw.beams[d];
+    Object.assign(s.beams[d], { b: b.b, D: b.D, top: b.top, bot: b.bot, farTop: b.top, farBot: b.bot, midTop: b.midTop, midBot: b.midBot });
+  }
+  return s;
 }
 
-// ---------- Output rendering ----------
-const esc = (s) => String(s).replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
-const pct = (A, b, d) => ((100 * A) / (b * d)).toFixed(2) + " %";
-
-function checkTable(res) {
-  return `<table><tr><th>Step</th><th>Clause</th><th>Check</th><th>Value</th><th>Limit</th><th></th><th>Notes</th></tr>
-    ${res.checks.map((c) => `<tr class="${c.ok ? "" : "badrow"}"><td>${esc(c.step)}</td><td>${esc(c.clause)}</td><td>${esc(c.item)}</td>
-      <td>${esc(c.value)}</td><td>${esc(c.limit)}</td><td class="${c.ok ? "ok" : "bad"}">${c.ok ? "OK" : "FAIL"}</td><td class="note">${esc(c.note)}</td></tr>`).join("")}</table>`;
+let lastRefined = null;
+function useRevised() {
+  if (!lastRefined) return;
+  setForm(lastRefined);
+  document.getElementById("inputs").scrollTop = 0;
+  alert("Revised sizes and bars copied into the input. Re-run your structural analysis with these sizes, update the forces here, and run again.");
 }
 
-function designCard(title, st, res, cls, extra = "") {
-  const c = st.col;
-  const beamRows = ["X", "Y"].filter((d) => st.beams[d].present).map((d) => {
-    const b = st.beams[d], r = res.beams[d];
-    return `<div>Beam ${d}</div><div><b>${b.b} × ${b.D}</b><br>top ${b.topText || Math.round(b.top) + " mm²"} (${pct(b.top, b.b, b.D - b.cover)})<br>
-      bottom ${b.botText || Math.round(b.bot) + " mm²"} (${pct(b.bot, b.b, b.D - b.cover)})<br>
-      Mu,hog ${r.caps.hog.Mu.toFixed(0)} / Mu,sag ${r.caps.sag.Mu.toFixed(0)} kN-m<br>links ${esc(r.shear.text)}</div>`;
-  }).join("");
-  const ratios = ["X", "Y"].filter((d) => st.beams[d].present).map((d) => `${d}: ${res.column["ratio" + d].toFixed(2)}`).join(", ");
-  const joints = ["X", "Y"].filter((d) => st.beams[d].present).map((d) => `${d}: ${(100 * res.joint[d].ratio).toFixed(0)} %`).join(", ");
-  return `<div class="card ${cls}"><h3>${title} <span class="badge ${res.ok ? "ok" : "bad"}">${res.ok ? "all checks pass" : res.checks.filter((x) => !x.ok).length + " checks fail"}</span></h3>
-    <div class="kv">
-      <div>Concrete</div><div>M${st.mat.fck}, Fe${st.mat.fy}</div>
-      <div>Column</div><div><b>${c.cx} × ${c.cy}</b>, ${c.barText || Math.round(c.Asc) + " mm²"} (${pct(c.Asc, c.cx, c.cy)})<br>
-        hoops ${c.tieDia} mm @ ${res.confinement.s} c/c over lo = ${res.confinement.lo.toFixed(0)} mm</div>
-      ${beamRows}
-      <div>ΣMc / ΣMb</div><div>${ratios} (need ≥ 1.4)</div>
-      <div>Joint shear used</div><div>${joints} of capacity</div>
-      <div>Steel at joint*</div><div class="big">${E.steelQuantity(st).toFixed(0)} kg</div>
-    </div>${extra}</div>`;
-}
-
+// ---------- Run ----------
 function run() {
   let input;
   try { input = getForm(); } catch (e) { alert(e.message); return; }
   $("runBtn").disabled = true; $("runBtn").textContent = "Working…";
-  $("outputs").innerHTML = `<div class="empty">Running checks and redesign…</div>`;
+  $("outputs").innerHTML = `<div class="empty">Running checks and redesign (a few seconds)…</div>`;
   setTimeout(() => {
     try {
       const initial = E.evaluate(input);
       const refined = E.redesign({ ...input, options: { ...input.options, conservative: false } });
-      const conserv = E.redesign({ ...input, options: { ...input.options, conservative: true } });
-      render(input, initial, refined, conserv);
+      const simple = E.redesign({ ...input, options: { ...input.options, conservative: true } });
+      const soft = input.software.on ? E.evaluate(softwareState(input)) : null;
+      lastRefined = { ...refined.state, software: input.software };
+      render(input, initial, refined, simple, soft);
     } catch (e) {
       $("outputs").innerHTML = `<div class="empty">Error: ${esc(e.message)}</div>`;
       console.error(e);
@@ -257,49 +297,116 @@ function run() {
   }, 30);
 }
 
-function render(input, initial, refined, conserv) {
-  const fails = initial.checks.filter((c) => !c.ok);
-  const kgR = E.steelQuantity(refined.state), kgC = E.steelQuantity(conserv.state);
-  const saving = ((1 - kgR / kgC) * 100).toFixed(0);
-  const hierarchy = refined.result.ok
-    ? `<p>Failure order achieved: <b>beam flexure</b> (ductile hinge) → beam shear is protected by capacity design (links for 1.4 × hinge moment) → columns are ≥ 1.4 × stronger than beams → joint carries 1.25 fy over-strength forces.</p>`
-    : `<p class="bad">Redesign did not reach a passing design. Revise the inputs (e.g. larger column or beam) and run again.</p>`;
+// ---------- Rendering ----------
+const pct = (A, b, d) => ((100 * A) / (b * d)).toFixed(2) + " %";
+const inr = (x) => "₹" + Math.round(x).toLocaleString("en-IN");
+const badge = (res) => {
+  const f = res.checks.filter((x) => x.status === "fail").length, w = res.checks.filter((x) => x.status === "warn").length;
+  return f ? `<span class="badge fail">${f} fail</span>` : w ? `<span class="badge warn">passes, ${w} warning${w > 1 ? "s" : ""}</span>` : `<span class="badge ok">all checks pass</span>`;
+};
+
+function checkTable(res) {
+  return `<table><tr><th>Step</th><th>Clause</th><th>Check</th><th>Value</th><th>Limit</th><th></th><th>Notes</th></tr>
+    ${res.checks.map((c) => `<tr class="${c.status === "ok" ? "" : c.status}"><td>${esc(c.step)}</td><td>${esc(c.clause)}</td><td>${esc(c.item)}</td>
+      <td>${esc(c.value)}</td><td>${esc(c.limit)}</td><td class="${c.status}">${c.status.toUpperCase()}</td><td class="note">${esc(c.note)}</td></tr>`).join("")}</table>`;
+}
+
+function designCard(title, st, res, cls, note = "") {
+  const c = st.col, cb = E.colBars(c), q = res.qty;
+  const beamRows = ["X", "Y"].filter((d) => st.beams[d].present).map((d) => {
+    const b = st.beams[d], r = res.beams[d];
+    return `<div>Beam ${d}</div><div><b>${b.b} × ${b.D}</b><br>face: top ${b.topText || Math.round(b.top) + " mm²"}, bottom ${b.botText || Math.round(b.bot) + " mm²"}<br>
+      Mu,hog ${r.caps.hog.Mu.toFixed(0)} (${r.capsOS.hog.Mu.toFixed(0)} with slab) / Mu,sag ${r.caps.sag.Mu.toFixed(0)} kN-m</div>`;
+  }).join("");
+  const dirs = ["X", "Y"].filter((d) => st.beams[d].present);
+  return `<div class="card ${cls}"><h3>${title} ${badge(res)}</h3>
+    <div class="kv">
+      <div>Concrete</div><div>M${st.mat.fck}, Fe${st.mat.fy}</div>
+      <div>Column</div><div><b>${c.cx} × ${c.cy}</b>, ${c.barText || Math.round(cb.Asc) + " mm²"} (${pct(cb.Asc, c.cx, c.cy)})<br>hoops ${res.hoops.tieDia} mm @ ${res.hoops.s} in lo, @ ${res.hoops.sMid} elsewhere</div>
+      ${beamRows}
+      <div>ΣMc / ΣMb</div><div>${dirs.map((d) => `${d}: ${res.column["ratio" + d].toFixed(2)}`).join(", ")} (≥ 1.4)</div>
+      <div>Joint shear</div><div>${dirs.map((d) => `${d}: ${(100 * res.joint[d].ratio).toFixed(0)} %`).join(", ")} of capacity</div>
+      <div>Quantities*</div><div>steel ${q.steelKg.toFixed(0)} + links ${q.linksKg.toFixed(0)} kg, concrete ${q.concreteM3.toFixed(2)} m³, formwork ${q.formworkM2.toFixed(1)} m²</div>
+      <div>Cost*</div><div class="big">${inr(q.cost)}</div>
+    </div>${note ? `<p class="note">${note}</p>` : ""}</div>`;
+}
+
+function schedule(st, res) {
+  const rows = [];
+  for (const d of ["X", "Y"]) {
+    const b = st.beams[d];
+    if (!b.present) continue;
+    const Ld = E.devLength(b.maxDia || 20, st.mat.fy, st.mat.fck);
+    rows.push([`Beam ${d} (${b.b} × ${b.D})`, `Top at face: ${b.topText}<br>Bottom at face: ${b.botText}<br>Top continuous: ${b.midTopText}<br>Bottom at midspan: ${b.midBotText}`,
+      `${res.beams[d].shear.text}`, `Laps ${Math.ceil(Ld / 10) * 10} mm, outside joint and 2d from face, ≤ 50 % at a section, links @ ≤ 150 over laps`]);
+  }
+  const c = st.col, h = res.hoops;
+  const LdC = E.devLength(E.colBars(c).maxDia, st.mat.fy, st.mat.fck);
+  rows.push([`Column (${c.cx} × ${c.cy})`, `${c.barText} (${c.nx} per X-face, ${c.ny} per Y-face)`,
+    `${h.tieDia} mm hoops, ${h.legsAlongX} × ${h.legsAlongY} legs: @ ${h.s} over lo = ${h.lo.toFixed(0)} mm each end and through the joint; @ ${h.sMid} elsewhere. 135° hooks, 8φ ≥ 75 mm`,
+    `Laps ${Math.ceil(LdC / 10) * 10} mm in middle half of clear height, ≤ 50 % at a section, hoops @ ≤ 100 over laps`]);
+  return `<table><tr><th>Member</th><th>Main bars</th><th>Links / hoops</th><th>Laps</th></tr>${rows.map((r) => `<tr>${r.map((x) => `<td>${x}</td>`).join("")}</tr>`).join("")}</table>`;
+}
+
+function render(input, initial, refined, simple, soft) {
+  const fails = initial.checks.filter((c) => c.status === "fail");
+  const qR = refined.result.qty, qS = simple.result.qty;
+  let status;
+  if (!refined.result.ok) status = `<div class="banner fail"><b>No passing design found</b> within the limits set. Relax the locks or size limits, or check the forces.</div>`;
+  else if (refined.reanalysis.length) status = `<div class="banner warn"><b>Provisional design – re-analysis required.</b> Stiffness changed by more than 10 %: ${refined.reanalysis.map(esc).join("; ")}.
+      These members now attract different forces. Put the revised sizes into your structural model, re-run the analysis, enter the new forces and run again. Repeat until no member changes.
+      <div class="row noprint"><button onclick="useRevised()">Use revised sizes as new input</button></div></div>`;
+  else status = `<div class="banner ok"><b>Final design.</b> No member stiffness changed by more than 10 %, so the analysis forces are still valid.</div>`;
+
+  const cmp = (a, b) => `${Math.abs(100 * (1 - a / b)).toFixed(0)} % ${a <= b ? "less" : "more"}`;
+  const softLine = soft ? `<li>Against the software design: refined uses ${cmp(qR.steelKg + qR.linksKg, soft.qty.steelKg + soft.qty.linksKg)} steel and costs ${cmp(qR.cost, soft.qty.cost)}${soft.ok ? "" : " – and the software design itself fails " + soft.checks.filter((c) => c.status === "fail").length + " checks under these forces"}.</li>` : "";
 
   $("outputs").innerHTML = `
     <h2>1 · Initial design check</h2>
-    <p>${fails.length ? `<span class="badge bad">${fails.length} checks fail</span> The initial design does not meet IS 13920:2016. Failing items are highlighted.` : `<span class="badge ok">All checks pass</span> The initial design meets IS 13920:2016. The redesign below shows whether it can be made more economical.`}</p>
+    <p>${fails.length ? `<span class="badge fail">${fails.length} checks fail</span> The initial design does not meet IS 13920:2016.` : `<span class="badge ok">No failures</span> The initial design meets IS 13920:2016; the redesign shows whether it can be made more economical.`}</p>
     ${checkTable(initial)}
 
     <h2>2 · Revised design</h2>
-    ${hierarchy}
+    ${status}
     <div class="cards">
-      ${designCard("Initial design", { ...input, col: { ...input.col }, beams: input.beams }, initial, initial.ok ? "" : "warn")}
-      ${designCard("Revised – refined analysis", refined.state, refined.result, "good",
-        `<p class="note">Doubly reinforced beams (mandatory bottom bars used as compression steel), exact strain-compatibility capacities, column capacity at actual Pu.</p>`)}
-      ${designCard("Revised – software-style assumptions", conserv.state, conserv.result, "",
-        `<p class="note">Beams designed singly reinforced below Mu,lim and bottom then raised to ½ top; column capacity taken as the lower of Pu = 0 and actual Pu. Same code checks.</p>`)}
+      ${designCard("Initial design", input, initial, initial.ok ? "" : "bad")}
+      ${designCard("Revised – refined method", refined.state, refined.result, refined.result.ok ? "good" : "bad",
+        "Doubly reinforced beams, exact capacities for the bars chosen, column capacity at the actual loads.")}
+      ${designCard("Revised – simplified textbook method", simple.state, simple.result, "",
+        "Beams singly reinforced up to Mu,lim, bottom then raised to ½ top; column capacity the lower of Pu = 0 and actual. Same code checks.")}
+      ${soft ? designCard("Software design (as entered)", softwareState(input), soft, soft.ok ? "" : "bad", "Checked here with the same forces.") : ""}
     </div>
-    <p class="note">* Longitudinal steel of the beams and columns meeting at the joint over one span / storey height, for comparing designs only.</p>
-    <p>Refined design uses <b>${saving} %</b> ${saving >= 0 ? "less" : "more"} longitudinal steel around this joint than the software-style design, with every IS 13920 check still satisfied.</p>
+    <p class="note">* Beams on both sides of the joint over their clear spans and one storey of column below. Rates are editable placeholders.</p>
+    <ul>
+      <li>Refined against simplified textbook method: ${cmp(qR.steelKg + qR.linksKg, qS.steelKg + qS.linksKg)} steel, ${cmp(qR.cost, qS.cost)} cost.</li>
+      ${softLine}
+      ${soft ? "" : `<li>To test the claim that software over-designs, enter the STAAD / ETABS design under “Software design”.</li>`}
+    </ul>
 
     <h3>Redesign steps taken (refined)</h3>
     <ol class="log">${refined.log.map((l) => `<li>${esc(l)}</li>`).join("") || "<li>No size changes needed; steel re-optimised only.</li>"}</ol>
 
-    <h2>3 · Final checks of refined design</h2>
+    <h2>3 · Reinforcement schedule (refined)</h2>
+    ${refined.result.ok ? schedule(refined.state, refined.result) : "<p>Not available – no passing design.</p>"}
+
+    <h2>4 · Final checks of refined design</h2>
     ${checkTable(refined.result)}
 
-    <h2>Why the two revised designs differ</h2>
+    <h2>Limits of this tool</h2>
     <ul>
-      <li><b>Doubly reinforced section.</b> Cl 6.2.3 forces bottom bars ≥ ½ top bars at every column face, so the support section is always doubly reinforced. Using that steel as compression reinforcement lowers the top steel needed. Designing each face as singly reinforced, then adding the ½ rule on top, gives more steel than needed.</li>
-      <li><b>Extra beam steel is not "safe" in seismic design.</b> Every extra mm² in a beam raises its hinge moment, which raises the capacity shear (Cl 6.3.3), the column moment needed for 1.4 × ΣMb (Cl 7.2.1), the column shear (Cl 7.5) and the joint shear at 1.25 fy (Cl 9.1). Over-designed beams lead to heavier columns and bigger joints.</li>
-      <li><b>Column capacity at the actual axial load.</b> Cl 7.2.1 asks for the least column capacity over the actual load combinations. Below the balanced point, capacity rises with Pu, so EQ22's Pu = 0 shortcut understates it and adds column steel. Above the balanced point (heavily loaded columns) capacity falls with Pu, and the Pu = 0 shortcut is <i>unsafe</i>. The refined design always uses the actual combinations.</li>
-      <li><b>Exact capacities instead of design-aid tables.</b> SP 16 tables and charts are read at the nearest lower value. Strain compatibility gives the actual value. The code factors (1.4, 1.25 fy, 0.40 fck, joint limits) are kept unchanged.</li>
+      <li>Forces come from your analysis. Any size change needs re-analysis (see the banner above); this tool does not analyse the frame.</li>
+      <li>One joint at a time. The far beam end and the column above are taken from your input; check them at their own joints.</li>
+      <li>Same beam section on both sides of the joint. Columns are rectangular with corner and side bars.</li>
+      <li>Hoop spacing uses the stricter of the original Cl 8.1(b) and Amendment 1 wording. Confirm against the printed amendment.</li>
+      <li>Not covered: torsion, walls, flat slabs, foundations, P-Δ beyond IS 456 slenderness moments.</li>
     </ul>
-    <div class="row"><button onclick="window.print()">Print / save as PDF</button></div>
+    <div class="row noprint"><button onclick="window.print()">Print / save as PDF</button></div>
   `;
 }
 
-loadExample();
+$("above_same").addEventListener("change", () => { $("aboveFields").style.opacity = $("above_same").checked ? 0.4 : 1; });
+setForm(EXAMPLE5);
+$("aboveFields").style.opacity = 0.4;
 </script>
 </body>
 </html>
