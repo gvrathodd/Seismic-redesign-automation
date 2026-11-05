@@ -1,0 +1,12 @@
+# Code documents (copyrighted, kept outside the repo)
+*.pdf
+
+# Saved dashboard inputs
+joint-input*.json
+
+# Editor / OS files
+.claude/
+.vscode/
+Thumbs.db
+desktop.ini
+node_modules/

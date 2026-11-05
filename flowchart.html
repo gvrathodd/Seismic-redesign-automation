@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Seismic redesign flowchart - IS 13920:2016 + EQ22 Example 5</title>
+<style>
+  body { font-family: "Segoe UI", Arial, sans-serif; margin: 24px auto; max-width: 1100px; color: #222; line-height: 1.5; padding: 0 16px; }
+  h1 { font-size: 22px; font-weight: 600; margin-bottom: 4px; }
+  h2 { font-size: 18px; font-weight: 600; margin-top: 32px; }
+  .sub { color: #666; margin-top: 0; }
+  .legend span { display: inline-block; padding: 2px 10px; border-radius: 4px; margin-right: 8px; font-size: 13px; border: 1px solid; }
+  table { border-collapse: collapse; width: 100%; font-size: 14px; }
+  th, td { border: 1px solid #ccc; padding: 6px 10px; text-align: left; vertical-align: top; }
+  th { background: #f3f3f3; }
+  .mermaid { margin-top: 16px; overflow-x: auto; }
+  .note { background: #fff8e6; border: 1px solid #e8c770; padding: 10px 14px; border-radius: 6px; font-size: 14px; }
+  @media print { .mermaid { page-break-inside: avoid; } }
+</style>
+</head>
+<body>
+
+<h1>Seismic redesign of beams, columns and joints</h1>
+<p class="sub">IS 13920:2016 (with Amendments 1 &amp; 2) &middot; procedure follows IITK-GSDMA EQ22, Example 5 (interior beam-column joint, Zone V)</p>
+
+<p class="legend">
+  <span style="background:#eef0ff;border-color:#5b5fc7">Design step</span>
+  <span style="background:#fff4dc;border-color:#c48a14">Code check</span>
+  <span style="background:#fdeaea;border-color:#c0392b">Revision (loop back)</span>
+  <span style="background:#f1f1ee;border-color:#777">Input / output</span>
+</p>
+
+<div class="note">
+  <b>Goal of the flow (capacity design):</b> (1) beams must yield in flexure <i>before</i> they fail in shear &rarr; Steps 2&ndash;3;
+  (2) beams must yield <i>before</i> columns and joints &rarr; Steps 5&ndash;7. Every check uses the <i>provided</i> steel, so any revision loops back and re-runs the checks after it.
+</div>
+
+<pre class="mermaid">
+flowchart TD
+  S([Start: initial design given]) --> IN[/"INPUT<br/>Beam: b, D, clear span Lc, top/bottom bars at both ends<br/>Column: b, D, bars, storey height hst<br/>Materials: fck, fy &middot; Joint type, no. of storeys, zone<br/>Factored forces: Mu, Vu, Pu, gravity shear V(D+L)"/]
+
+  IN --> M00["STEP 0 &middot; Materials &middot; Cl 5.2, 5.3 (Amd 2)<br/>fck &ge; M20 (M25 if H &gt; 15 m in Zone III-V)<br/>Fe 415 / 500 / 550"] --> M0{OK?}
+  M0 -- No --> R0[Raise concrete grade / change steel] --> M00
+  M0 -- Yes --> B1
+
+  B1["STEP 1 &middot; Beam geometry &middot; Cl 6.1<br/>b &ge; 200 mm, b/D &ge; 0.3, D &le; Lc/4<br/>b &le; c2 + min(c2, 0.75 c1)"] --> B1C{OK?}
+  B1C -- No --> RB1[Revise beam b or D] --> B1
+  B1C -- Yes --> B2
+
+  B2["STEP 2 &middot; Beam flexure, doubly reinforced &middot; IS 456 + Cl 6.2<br/>least top + bottom steel: bottom bars act as compression<br/>steel for hogging, top bars for sagging; xu &le; xu,max<br/>min 2-12 mm bars each face<br/>&rho;min = 0.24&radic;fck / fy, &rho;max = 0.025<br/>bottom &ge; &frac12; top at column face, any section &ge; &frac14; top at face"] --> B2C{"Mu,cap &ge; Mu,dem<br/>&rho; &le; 2.5%?"}
+  B2C -- No --> RB2[Add bars, or deepen beam if &rho; &gt; 2.5%] --> G2([&#8635; back to Step 1])
+  B2C -- Yes --> B2M["Exact capacities of bars provided<br/>strain compatibility, doubly reinforced<br/>(not SP 16 table lookup)<br/>MuA(hog), MuA(sag), MuB(hog), MuB(sag)"]
+
+  B2M --> B3["STEP 3 &middot; Capacity-design shear &middot; Cl 6.3.3 (Amd 2)<br/>Sway right: Vu,a = V(D+L),a &minus; 1.4(MuA,sag + MuB,hog)/Lc<br/>          Vu,b = V(D+L),b + 1.4(MuA,sag + MuB,hog)/Lc<br/>Sway left: same with (MuA,hog + MuB,sag), signs reversed<br/>V(D+L) with 1.2 factor, simply supported<br/>Design Vu = max(above, analysis shear)"]
+  B3 --> B3L["Design links &middot; Cl 6.3.2, 6.3.4, 6.3.5<br/>Vus = Vu (concrete, bent bars ignored)<br/>&phi; &ge; 8 mm; over 2d at each end: s &le; d/4, 8&phi;min, 100 mm<br/>first link &le; 50 mm from face; elsewhere s &le; d/2"]
+  B3L --> B3C{"&tau;v &le; &tau;c,max?"}
+  B3C -- No --> RB3[Increase beam section] --> G3([&#8635; back to Step 1])
+  B3C -- Yes --> C1
+
+  C1["STEP 4 &middot; Column checks &middot; Cl 7.1 (Amd 2)<br/>Pu / (fck Ag) &le; 0.40<br/>min dimension &ge; max(300 mm, 20 &times; largest beam bar)<br/>b/D &ge; 0.45"] --> C1C{OK?}
+  C1C -- No --> RC1[Increase column size or grade] --> C1
+  C1C -- Yes --> C2["Column P-M design &middot; IS 456 / SP 16<br/>0.8% &le; &rho; &le; 4%"]
+
+  C2 --> C3["STEP 5 &middot; Strong column - weak beam &middot; Cl 7.2.1<br/>&Sigma;Mc &ge; 1.4 &Sigma;Mb at the joint<br/>both sway directions, both X and Y<br/>Mc from P-M curve at each actual Pu, take least<br/>(Pu = 0 shortcut unsafe above balanced point)<br/>(waived at roof joints if &gt; 4 storeys)"]
+  C3 --> C3C{"&Sigma;Mc/&Sigma;Mb &ge; 1.4?"}
+  C3C -- No --> RC3["Increase column steel or size<br/>(do not add extra beam steel)"] --> G5([&#8635; back to Step 4])
+  C3C -- Yes --> C4
+
+  C4["STEP 6 &middot; Column shear &middot; Cl 7.5<br/>Vu = max(analysis, 1.4(Mu,sag + Mu,hog of beams)/hst)<br/>Capacity per IS 456"] --> C4C{OK?}
+  C4C -- No --> RC4[Closer ties / larger column] --> C4
+  C4C -- Yes --> J1
+
+  J1["STEP 7 &middot; Joint shear &middot; Cl 9 (EQ22 Ex 5)<br/>T1 = 1.25 fy &times; Ast,top &nbsp; C2 = T2 = 1.25 fy &times; Ast,bot<br/>Vj = T1 + C2 &minus; Vcol<br/>Aej = bj &times; hc, bj per Cl 9.1.2 / Fig 15<br/>&tau;jc = 1.5 / 1.2 / 1.0 &radic;fck (4 / 3 / other faces confined)<br/>check X and Y; column width &ge; 20 &times; beam bar dia (Cl 9.1.3)"]
+  J1 --> J1C{"&tau;j &le; &tau;jc<br/>X and Y?"}
+  J1C -- No --> RJ1["EQ22 Sec 5.5 revision options:<br/>i) enlarge column (bigger joint area)<br/>ii) deepen beam (less steel, less joint shear)<br/>iii) higher concrete grade"] --> G7([&#8635; back to Step 1])
+  J1C -- Yes --> D1
+
+  D1["STEP 8 &middot; Confinement &amp; detailing &middot; Cl 7.4, 7.6, 9.2<br/>lo &ge; max(D, Lc/6, 450 mm)<br/>Ash = max[0.18 s h (fck/fy)(Ag/Ak &minus; 1), 0.05 s h fck/fy]<br/>135&deg; hooks, 8&phi; &ge; 75 mm extension (Amd 1)<br/>Joint: &frac12; Ash, s &le; 150 if all 4 faces have beams &ge; 75% wide, else full Ash<br/>lap-splice location rules (Cl 6.2.6, 7.3.2)"]
+  D1 --> OUT[/"OUTPUT<br/>Revised beam &amp; column sizes and bars, links and spacing<br/>Check table with clause and pass/fail<br/>Failure order: beam flexure &rarr; beam shear &rarr; column / joint"/]
+  OUT --> RA{"Sizes changed<br/>a lot?"}
+  RA -- Yes --> REAN[Re-run structural analysis with new stiffness] --> G9([&#8635; back to INPUT])
+  RA -- No --> E([End: final design])
+
+  classDef step fill:#eef0ff,stroke:#5b5fc7,color:#1c1f5e;
+  classDef check fill:#fff4dc,stroke:#c48a14,color:#5a3b00;
+  classDef rev fill:#fdeaea,stroke:#c0392b,color:#6b1a12;
+  classDef io fill:#f1f1ee,stroke:#777,color:#222;
+  class M00,B1,B2,B2M,B3,B3L,C1,C2,C3,C4,J1,D1 step;
+  class M0,B1C,B2C,B3C,C1C,C3C,C4C,J1C,RA check;
+  class R0,RB1,RB2,RB3,RC1,RC3,RC4,RJ1,REAN rev;
+  class S,IN,OUT,E io;
+  classDef goto fill:#fff,stroke:#c0392b,stroke-dasharray:4 3,color:#6b1a12;
+  class G2,G3,G5,G7,G9 goto;
+</pre>
+
+<h2>Avoiding over-design</h2>
+<p>Packaged software (STAAD Pro, ETABS etc.) runs these checks automatically but tends to over-design. In seismic design extra steel is not automatically safe. Extra beam steel raises the beam hinge moment, and everything after it (beam shear, the 1.4 column check, column shear, joint shear) is designed from that moment. Over-designed beams therefore lead to heavier columns and bigger joints. This procedure keeps every code factor but removes the usual simplifications:</p>
+<table>
+  <tr><th>Usual simplification</th><th>This procedure</th></tr>
+  <tr><td>Each beam face designed as singly reinforced, then bottom steel raised to &frac12; top (Cl 6.2.3)</td><td>The mandatory bottom steel is used as compression steel (doubly reinforced section), giving the least top + bottom steel</td></tr>
+  <tr><td>Capacities read from SP 16 tables or charts at the nearest lower value; bars rounded up</td><td>Capacities by strain compatibility (IS 456 Cl 38.1, 39) for the bars actually chosen; bar combinations picked to just exceed the requirement</td></tr>
+  <tr><td>Column moment capacity at Pu = 0 for the strong column check</td><td>Least capacity over the actual earthquake combinations, as Cl 7.2.1 requires. This is also safer for heavily loaded columns.</td></tr>
+  <tr><td>Members grouped and designed for the worst member in the group</td><td>Each joint designed for its own forces</td></tr>
+</table>
+
+<h2>Why each step exists</h2>
+<table>
+  <tr><th>Step</th><th>Clause</th><th>What it protects against</th></tr>
+  <tr><td>1&ndash;2 Beam geometry &amp; flexure</td><td>6.1, 6.2</td><td>Beam is a ductile fuse: enough steel to carry demand, but capped at 2.5% so it yields gradually instead of crushing.</td></tr>
+  <tr><td>3 Capacity-design shear</td><td>6.3.3&ndash;6.3.5</td><td><b>Flexure before shear.</b> Links are designed for the shear that exists when both ends have already formed plastic hinges (1.4 &times; capacity), with concrete ignored, so shear can never govern.</td></tr>
+  <tr><td>4 Column checks</td><td>7.1</td><td>Axial stress &le; 0.40 fck keeps the column ductile; size rules give room for beam-bar anchorage.</td></tr>
+  <tr><td>5 Strong column - weak beam</td><td>7.2.1</td><td><b>Beams before columns.</b> Columns at each joint must be 1.4&times; stronger than the beams, so hinges form in beams, not columns (avoids storey collapse).</td></tr>
+  <tr><td>6 Column shear</td><td>7.5</td><td>Column must survive the shear created when beam hinges form.</td></tr>
+  <tr><td>7 Joint shear</td><td>9.1</td><td>Joint must carry the forces from beam bars at 1.25 fy (over-strength). This is the core of EQ22 Example 5 and is often the check that fails.</td></tr>
+  <tr><td>8 Confinement &amp; detailing</td><td>7.4, 7.6, 9.2</td><td>Confined concrete at hinge zones and joints so they can rotate without crushing.</td></tr>
+</table>
+
+<h2>Notes</h2>
+<ul>
+  <li>EQ22 was written against a <i>draft</i> of IS 13920. Where they differ, this flowchart uses the 2016 code: strong column ratio is <b>1.4</b> (EQ22 used 1.1); joint strength is in terms of &radic;fck per Amendment 2.</li>
+  <li>EQ22 Example 5 revised the members (column 400&times;500 &rarr; 600&times;600, beam 300&times;500 &rarr; 300&times;600) <i>without re-analysis</i>. The last decision box above flags when re-analysis is advisable.</li>
+  <li>This flow is for an interior joint (Example 5). Exterior and roof joints (Examples 6&ndash;8) change only the joint confinement factor, the joint shear expression and the roof waiver in Step 5.</li>
+</ul>
+
+<script type="module">
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+  mermaid.initialize({ startOnLoad: true, theme: "base", flowchart: { useMaxWidth: false, htmlLabels: true, curve: "basis", nodeSpacing: 30, rankSpacing: 40 }, themeVariables: { fontSize: "13px", fontFamily: "Segoe UI, Arial, sans-serif" } });
+</script>
+</body>
+</html>
