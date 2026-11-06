@@ -1,5 +1,7 @@
 # Seismic redesign automation
 
+**Live dashboard:** https://gvrathodd.github.io/Seismic-redesign-automation/ · **Full explanation:** [EXPLAINER.md](EXPLAINER.md)
+
 Checks and redesigns an RC beam-column joint for earthquake loading as per **IS 13920:2016** (with Amendments 1 & 2) and **IS 456:2000**. It follows the procedure of IITK-GSDMA **EQ22, Example 5** (interior beam-column joint, Zone V).
 
 Starting from an initial design and its analysis forces, it makes sure that:
@@ -11,15 +13,18 @@ Starting from an initial design and its analysis forces, it makes sure that:
 
 | File | What it is |
 |---|---|
+| `index.html` | The dashboard: enter the initial design, get the code check, revised design, schedule and cost comparison |
+| `EXPLAINER.md` | The whole project explained from first principles, with both worked examples |
 | `flowchart.html` | The redesign procedure as a flowchart, with clause references and the review fixes |
-| `dashboard.html` | Enter the initial design, get the code check, revised design, schedule and cost comparison |
 | `engine.js` | All calculations (used by the dashboard, also runs in Node) |
-| `example5.js` | EQ22 Example 5 input, shared by the dashboard and tests |
+| `worker.js` | Runs the calculations in the background so the page stays responsive |
+| `example5.js` | EQ22 Example 5 input |
+| `example_health_centre.js` | Health Centre (G+1, Zone V) joint at column D3, forces from STAAD.Pro with IS 1893:2016 loads |
 | `test_engine.js` | Checks against EQ22 Examples 1 and 5 and basic mechanics |
 
 ## Using it
 
-Open `dashboard.html` in Chrome or Edge, keeping the other files in the same folder. Click **Load EQ22 Example 5** for a worked case, or enter your own design and press **Check & redesign**.
+Open the live dashboard, or `index.html` locally (served over http, e.g. `python -m http.server`, so the background worker can run). Pick **Health Centre, D3** or **EQ22 Example 5** for a worked case, or enter your own design and press **Check & redesign**.
 
 If the redesign changes any member's stiffness by more than 10 %, the result is marked **provisional**. Click **Use revised sizes as new input**, re-run your structural analysis with those sizes, enter the new forces and run again. Repeat until no member changes.
 

@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f6f6f5">
+<meta name="color-scheme" content="light">
+<title>Joint Redesign · IS 13920:2016 seismic checks</title>
+<meta name="description" content="Checks and redesigns RC beam-column joints for earthquake loading to IS 13920:2016 and IS 456, following IITK-GSDMA EQ22 Example 5.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2318181b'/%3E%3Cpath d='M14 4h4v24h-4zM4 13h24v6H4z' fill='%23fafafa'/%3E%3C/svg%3E">
+<style>
+  :root {
+    --bg: #f6f6f5; --surface: #ffffff; --sunken: #f0f0ef; --line: #e4e4e2; --line-strong: #d1d1ce;
+    --ink: #18181b; --ink-2: #3f3f46; --muted: #6b6b72; --faint: #a1a1aa;
+    --accent: #2f55c8; --accent-ink: #ffffff; --accent-soft: #eef2fc;
+    --ok: #157a4a; --ok-soft: #e7f4ec; --warn: #9a6200; --warn-soft: #fbf2df; --fail: #b4261f; --fail-soft: #fbeceb;
+    --r-sm: 6px; --r: 10px; --r-lg: 16px;
+    --shadow: 0 1px 0 rgba(24,24,27,.03), 0 12px 32px -18px rgba(24,24,27,.18);
+    --ease: cubic-bezier(.16,1,.3,1);
+    --sans: "Geist", ui-sans-serif, system-ui, "Segoe UI", sans-serif;
+    --mono: "Geist Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; color-scheme: light; scroll-padding-top: 72px; }
+  h1, h2 { text-wrap: balance; }
+  button, .btn, summary, a { touch-action: manipulation; }
+  .skip { position: absolute; left: 12px; top: -48px; z-index: 30; background: var(--ink); color: #fafafa; padding: 8px 14px; border-radius: var(--r-sm); }
+  .skip:focus { top: 10px; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.55 var(--sans); }
+  a { color: var(--accent); text-underline-offset: 3px; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+  .num, .mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+  /* ---------- top bar ---------- */
+  .topbar { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 24px; padding: 12px 24px;
+    background: rgba(246,246,245,.86); backdrop-filter: saturate(1.4) blur(10px); border-bottom: 1px solid var(--line); }
+  .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--ink); }
+  .brand svg { flex: none; }
+  .brand b { font-weight: 600; letter-spacing: -.01em; }
+  .brand span { color: var(--muted); font-size: 13px; }
+  .topnav { margin-left: auto; display: flex; gap: 4px; flex-wrap: wrap; }
+  .topnav a { color: var(--ink-2); text-decoration: none; font-size: 14px; padding: 7px 12px; border-radius: var(--r-sm); transition: background .2s var(--ease); }
+  .topnav a:hover { background: var(--sunken); }
+
+  /* ---------- shell ---------- */
+  .shell { display: grid; grid-template-columns: minmax(360px, 440px) minmax(0, 1fr); max-width: 1560px; margin: 0 auto; }
+  .inputs { position: sticky; top: 57px; height: calc(100dvh - 57px); display: flex; flex-direction: column; border-right: 1px solid var(--line); background: var(--surface); }
+  .inputs-scroll { overflow-y: auto; padding: 20px 20px 24px; flex: 1; scrollbar-gutter: stable; }
+  .results { min-width: 0; padding: 28px 36px 80px; }
+
+  /* ---------- inputs ---------- */
+  .eyebrow { font: 500 12px/1 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: 0 0 10px; }
+  .starter { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+  .starter button { text-align: left; padding: 10px 12px; border-radius: var(--r); border: 1px solid var(--line); background: var(--surface); cursor: pointer;
+    font: inherit; color: var(--ink); transition: border-color .2s var(--ease), background .2s var(--ease), transform .15s var(--ease); }
+  .starter button:hover { border-color: var(--line-strong); background: var(--sunken); }
+  .starter button:active { transform: scale(.98); }
+  .starter button[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
+  .starter b { display: block; font-weight: 500; font-size: 14px; }
+  .starter small { color: var(--muted); font-size: 12px; }
+  .filebar { display: flex; gap: 6px; margin: 4px 0 18px; }
+  .linkbtn { font: 500 13px var(--sans); color: var(--ink-2); background: none; border: 0; padding: 6px 8px; border-radius: var(--r-sm); cursor: pointer; }
+  .linkbtn:hover { background: var(--sunken); }
+
+  details.sec { border-top: 1px solid var(--line); }
+  details.sec:last-of-type { border-bottom: 1px solid var(--line); }
+  details.sec > summary { list-style: none; display: flex; align-items: baseline; gap: 10px; padding: 13px 2px; cursor: pointer; user-select: none; }
+  details.sec > summary::-webkit-details-marker { display: none; }
+  summary .idx { font: 500 12px var(--mono); color: var(--faint); width: 20px; }
+  summary .ttl { font-weight: 500; }
+  summary .hint { margin-left: auto; color: var(--muted); font-size: 12px; }
+  summary .chev { width: 14px; height: 14px; color: var(--faint); transition: transform .25s var(--ease); align-self: center; }
+  details[open] > summary .chev { transform: rotate(90deg); }
+  details.sec.has-error > summary .ttl { color: var(--fail); }
+  .sec-body { padding: 2px 2px 18px 30px; }
+  .fields { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 12px; }
+  .field { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+  .field label { font-size: 12.5px; color: var(--ink-2); display: flex; justify-content: space-between; gap: 6px; }
+  .field label .unit { color: var(--faint); font-family: var(--mono); font-size: 11.5px; }
+  .field input, .field select, textarea { width: 100%; font: 14px var(--mono); color: var(--ink); background: var(--surface); border: 1px solid var(--line-strong);
+    border-radius: var(--r-sm); padding: 8px 10px; transition: border-color .15s, box-shadow .15s; }
+  .field select { font-family: var(--sans); }
+  .field input:hover, .field select:hover { border-color: var(--faint); }
+  .field input:focus, .field select:focus, textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .field.invalid input { border-color: var(--fail); box-shadow: 0 0 0 3px var(--fail-soft); }
+  .field .err { font-size: 12px; color: var(--fail); min-height: 0; }
+  .wide { grid-column: 1 / -1; }
+  .check { display: flex; gap: 10px; align-items: flex-start; font-size: 13.5px; color: var(--ink-2); cursor: pointer; padding: 4px 0; }
+  .check input { width: 16px; height: 16px; margin: 2px 0 0; accent-color: var(--accent); flex: none; }
+  .help { font-size: 12.5px; color: var(--muted); margin: 10px 0 0; line-height: 1.5; }
+  textarea { min-height: 170px; resize: vertical; line-height: 1.5; font-size: 13px; }
+  fieldset.sub { border: 0; padding: 0; margin: 14px 0 0; }
+  fieldset.sub legend { font: 500 12px var(--mono); color: var(--muted); text-transform: uppercase; letter-spacing: .05em; padding: 0; margin-bottom: 8px; }
+  .dim { opacity: .45; pointer-events: none; }
+
+  .runbar { padding: 14px 20px; border-top: 1px solid var(--line); background: var(--surface); display: flex; align-items: center; gap: 12px; }
+  .btn { font: 500 14px var(--sans); border-radius: var(--r); padding: 11px 18px; border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink);
+    cursor: pointer; transition: transform .15s var(--ease), background .2s var(--ease), border-color .2s; display: inline-flex; align-items: center; gap: 8px; min-height: 44px; }
+  .btn:hover { background: var(--sunken); }
+  .btn:active { transform: translateY(1px) scale(.99); }
+  .btn.primary { background: var(--ink); color: #fafafa; border-color: var(--ink); }
+  .btn.primary:hover { background: #2b2b30; }
+  .btn:disabled { opacity: .6; cursor: progress; }
+  .runbar .status { font-size: 13px; color: var(--muted); }
+
+  /* ---------- results: empty / loading ---------- */
+  .empty { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr); gap: 48px; align-items: center; max-width: 1080px; min-height: calc(100dvh - 180px); }
+  .empty h1 { font-size: clamp(30px, 3.4vw, 44px); line-height: 1.05; letter-spacing: -.03em; font-weight: 600; margin: 0 0 16px; }
+  .empty p { color: var(--ink-2); max-width: 58ch; margin: 0 0 14px; }
+  .empty ol { padding-left: 20px; color: var(--ink-2); margin: 18px 0 26px; }
+  .empty ol li { margin: 6px 0; }
+  .empty .actions { display: flex; gap: 10px; flex-wrap: wrap; }
+  .joint-art { width: 100%; height: auto; max-width: 420px; justify-self: center; }
+  .joint-art .hinge { animation: breathe 3.2s ease-in-out infinite; transform-origin: center; transform-box: fill-box; }
+  .joint-art .hinge:nth-of-type(2) { animation-delay: .8s; } .joint-art .hinge:nth-of-type(3) { animation-delay: 1.6s; } .joint-art .hinge:nth-of-type(4) { animation-delay: 2.4s; }
+  @keyframes breathe { 0%,100% { opacity: .35; transform: scale(.85); } 50% { opacity: 1; transform: scale(1); } }
+
+  .skeleton { display: grid; gap: 16px; max-width: 1100px; }
+  .sk { border-radius: var(--r-lg); background: linear-gradient(90deg, #ececea 0%, #f6f6f5 40%, #ececea 80%); background-size: 200% 100%; animation: shimmer 1.4s linear infinite; }
+  @keyframes shimmer { to { background-position: -200% 0; } }
+  .progress-line { font: 13px var(--mono); color: var(--muted); }
+
+  /* ---------- results ---------- */
+  .res { max-width: 1180px; }
+  .reveal > * { animation: rise .55s var(--ease) both; animation-delay: calc(var(--i, 0) * 70ms); }
+  @keyframes rise { from { opacity: 0; transform: translateY(10px); } }
+  .subnav { display: flex; gap: 2px; flex-wrap: wrap; margin: 0 0 24px; border-bottom: 1px solid var(--line); }
+  .subnav a { font-size: 13.5px; color: var(--muted); text-decoration: none; padding: 9px 12px; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+  .subnav a:hover { color: var(--ink); border-color: var(--line-strong); }
+
+  .verdict { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 28px; align-items: end; margin-bottom: 28px; }
+  .verdict h1 { font-size: clamp(26px, 2.8vw, 38px); line-height: 1.08; letter-spacing: -.03em; font-weight: 600; margin: 6px 0 10px; }
+  .verdict p { color: var(--ink-2); margin: 0; max-width: 62ch; }
+  .chip { display: inline-flex; align-items: center; gap: 6px; font: 500 12px var(--mono); padding: 4px 9px; border-radius: 999px; white-space: nowrap; }
+  .chip::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+  .chip.ok { color: var(--ok); background: var(--ok-soft); } .chip.warn { color: var(--warn); background: var(--warn-soft); } .chip.fail { color: var(--fail); background: var(--fail-soft); }
+  .chip.plain { color: var(--ink-2); background: var(--sunken); } .chip.plain::before { display: none; }
+
+  .kpis { display: grid; grid-template-columns: 1.4fr 1fr 1fr 1fr; border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--surface); box-shadow: var(--shadow); overflow: hidden; }
+  .kpi { padding: 18px 20px; border-left: 1px solid var(--line); min-width: 0; }
+  .kpi:first-child { border-left: 0; }
+  .kpi .k { font-size: 12.5px; color: var(--muted); }
+  .kpi .v { font: 500 26px/1.15 var(--mono); letter-spacing: -.02em; margin: 6px 0 4px; }
+  .kpi .s { font-size: 12.5px; color: var(--ink-2); }
+  .kpi .v small { font-size: 14px; color: var(--muted); }
+
+  section.block { margin: 40px 0 0; scroll-margin-top: 80px; }
+  section.block > header { display: flex; align-items: baseline; gap: 14px; margin-bottom: 14px; flex-wrap: wrap; }
+  section.block h2 { font-size: 19px; font-weight: 600; letter-spacing: -.015em; margin: 0; }
+  section.block > header p { margin: 0; color: var(--muted); font-size: 13.5px; }
+
+  .banner { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 14px; align-items: center; padding: 14px 18px; border-radius: var(--r-lg); margin: 0 0 28px; border: 1px solid; }
+  .banner.warn { background: var(--warn-soft); border-color: #ecd6a8; color: #5b3a00; }
+  .banner.ok { background: var(--ok-soft); border-color: #bfe0cc; color: #0d4a2d; }
+  .banner.fail { background: var(--fail-soft); border-color: #efc6c3; color: #6e1712; }
+  .banner svg { flex: none; }
+  .banner p { margin: 0; font-size: 14px; }
+
+  /* utilisation */
+  .util { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); box-shadow: var(--shadow); padding: 8px 22px 16px; }
+  .util-legend { display: flex; gap: 18px; font-size: 12.5px; color: var(--muted); padding: 12px 0 6px; flex-wrap: wrap; }
+  .util-legend i { display: inline-block; width: 18px; height: 6px; border-radius: 3px; margin-right: 6px; vertical-align: middle; }
+  .urow { display: grid; grid-template-columns: minmax(150px, 210px) minmax(0, 1fr); gap: 18px; align-items: center; padding: 10px 0; border-top: 1px solid var(--line); }
+  .urow:first-of-type { border-top: 0; }
+  .urow .lbl { font-size: 13.5px; } .urow .lbl small { display: block; color: var(--muted); font: 11.5px var(--mono); }
+  .bars { position: relative; display: grid; gap: 5px; }
+  .bar { position: relative; height: 18px; background: var(--sunken); border-radius: 4px; overflow: hidden; }
+  .bar > span { position: absolute; inset: 0 auto 0 0; border-radius: 4px; transform-origin: left; animation: grow .8s var(--ease) both; }
+  .bar.initial > span { background: #c9c9cf; }
+  .bar.initial.over > span { background: repeating-linear-gradient(-45deg, #e3a19c 0 6px, #eab6b2 6px 12px); }
+  .bar.revised > span { background: var(--ink); }
+  .bar em { position: absolute; right: 8px; top: 0; line-height: 18px; font: normal 11.5px var(--mono); color: var(--ink-2); }
+  .bar.revised em { color: var(--ink-2); }
+  .limit { position: absolute; top: -4px; bottom: -4px; width: 0; border-left: 1.5px dashed var(--fail); }
+  .limit-lbl { position: absolute; top: -18px; transform: translateX(-50%); font: 10.5px var(--mono); color: var(--fail); white-space: nowrap; }
+  @keyframes grow { from { transform: scaleX(0); } }
+
+  /* tables */
+  .tablewrap { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); box-shadow: var(--shadow); overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+  th, td { text-align: left; vertical-align: top; padding: 10px 14px; border-top: 1px solid var(--line); }
+  thead th { border-top: 0; font-weight: 500; font-size: 12px; color: var(--muted); background: #fafaf9; position: sticky; top: 0; white-space: nowrap; }
+  tbody tr:hover td { background: #fbfbfa; }
+  td.num { white-space: nowrap; }
+  .cmp th[scope=row] { font-weight: 500; color: var(--ink-2); white-space: nowrap; width: 170px; }
+  .cmp td.best { background: var(--accent-soft); }
+  .cmp .colhead b { display: block; font-size: 13.5px; color: var(--ink); }
+  .cmp .colhead small { font-weight: 400; }
+  tr.is-fail td { background: var(--fail-soft); } tr.is-warn td { background: var(--warn-soft); }
+  .note { font-size: 12.5px; color: var(--muted); }
+  .filters { display: flex; gap: 6px; flex-wrap: wrap; margin-left: auto; }
+  .filters button { font: 500 12.5px var(--sans); padding: 6px 11px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--ink-2); cursor: pointer; min-height: 32px; }
+  .filters button[aria-pressed="true"] { background: var(--ink); color: #fafafa; border-color: var(--ink); }
+
+  ol.path { list-style: none; padding: 0; margin: 0; position: relative; }
+  ol.path li { position: relative; padding: 6px 0 6px 26px; font-size: 14px; color: var(--ink-2); }
+  ol.path li::before { content: ""; position: absolute; left: 6px; top: 13px; width: 8px; height: 8px; border-radius: 50%; background: var(--surface); border: 1.5px solid var(--ink-2); }
+  ol.path li::after { content: ""; position: absolute; left: 10px; top: 23px; bottom: -7px; border-left: 1px solid var(--line-strong); }
+  ol.path li:last-child::after { display: none; }
+
+  .two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 28px; }
+  .prose p, .prose li { color: var(--ink-2); font-size: 14px; max-width: 70ch; }
+  .prose ul { padding-left: 18px; }
+  footer.site { margin-top: 56px; padding-top: 20px; border-top: 1px solid var(--line); font-size: 12.5px; color: var(--muted); display: flex; gap: 18px; flex-wrap: wrap; }
+
+  @media (max-width: 1080px) {
+    .shell { grid-template-columns: 1fr; }
+    .inputs { position: static; height: auto; border-right: 0; border-bottom: 1px solid var(--line); }
+    .results { padding: 24px 16px 64px; }
+    .empty, .verdict, .two { grid-template-columns: 1fr; }
+    .joint-art { max-width: 280px; }
+    .kpis { grid-template-columns: 1fr 1fr; } .kpi:nth-child(3) { border-left: 0; } .kpi:nth-child(n+3) { border-top: 1px solid var(--line); }
+  }
+  @media (max-width: 560px) {
+    .topbar { padding: 10px 14px; gap: 10px; } .brand span { display: none; }
+    .fields { grid-template-columns: 1fr; } .starter { grid-template-columns: 1fr; }
+    .urow { grid-template-columns: 1fr; gap: 6px; } .kpis { grid-template-columns: 1fr; } .kpi { border-left: 0; border-top: 1px solid var(--line); } .kpi:first-child { border-top: 0; }
+    .banner { grid-template-columns: 1fr; }
+  }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+  @media print {
+    .topbar, .inputs, .subnav, .noprint { display: none !important; }
+    .shell { display: block; } .results { padding: 0; } body { background: #fff; }
+    .tablewrap, .util, .kpis { box-shadow: none; }
+  }
+</style>
+</head>
+<body>
+<a class="skip" href="#results">Skip to results</a>
+<header class="topbar">
+  <a class="brand" href="./" aria-label="Joint Redesign home">
+    <svg width="28" height="28" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#18181b"/><path d="M14 4h4v24h-4zM4 13h24v6H4z" fill="#fafafa"/><circle cx="9" cy="16" r="1.6" fill="#18181b"/><circle cx="23" cy="16" r="1.6" fill="#18181b"/></svg>
+    <b>Joint Redesign</b><span>IS 13920:2016 · IS 456 · EQ22</span>
+  </a>
+  <nav class="topnav" aria-label="Project">
+    <a href="flowchart.html">Flowchart</a>
+    <a href="https://github.com/gvrathodd/Seismic-redesign-automation/blob/main/EXPLAINER.md">How it works</a>
+    <a href="https://github.com/gvrathodd/Seismic-redesign-automation">Source</a>
+  </nav>
+</header>
+
+<div class="shell">
+  <aside class="inputs" aria-label="Design input">
+    <div class="inputs-scroll">
+      <p class="eyebrow">Start from</p>
+      <div class="starter" role="group" aria-label="Load an example">
+        <button type="button" data-example="HEALTH_CENTRE" aria-pressed="false"><b>Health Centre, D3</b><small>STAAD.Pro · Zone V hospital</small></button>
+        <button type="button" data-example="EXAMPLE5" aria-pressed="false"><b>EQ22 Example 5</b><small>Interior joint · textbook</small></button>
+      </div>
+      <div class="filebar">
+        <button type="button" class="linkbtn" id="saveBtn">Save input</button>
+        <button type="button" class="linkbtn" id="loadBtn">Open input…</button>
+        <input type="file" id="loadFile" accept=".json" hidden>
+      </div>
+      <form id="form" novalidate></form>
+    </div>
+    <div class="runbar">
+      <button class="btn primary" id="runBtn" type="button">
+        <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9-5.5z" fill="currentColor"/></svg>
+        Check &amp; redesign
+      </button>
+      <span class="status" id="runStatus" aria-live="polite"></span>
+    </div>
+  </aside>
+
+  <main class="results" id="results" tabindex="-1" aria-live="polite"></main>
+</div>
+
+<script src="engine.js"></script>
+<script src="example5.js"></script>
+<script src="example_health_centre.js"></script>
+<script>
+const E = window.SeismicEngine;
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const EXAMPLES = { EXAMPLE5: window.EXAMPLE5, HEALTH_CENTRE: window.HEALTH_CENTRE };
+const GRADES = [20, 25, 30, 35, 40];
+
+/* ---------------- form definition ---------------- */
+// [key, label, unit, required]
+const COL = [["cx", "Size along X, cx", "mm", 1], ["cy", "Size along Y, cy", "mm", 1], ["nx", "Bars per X-face", "incl. corners", 1], ["ny", "Bars per Y-face", "incl. corners", 1],
+  ["cornerDia", "Corner bar", "mm", 0], ["otherDia", "Other bars", "mm", 0], ["Asc", "Total Asc if dia = 0", "mm²", 0], ["dc", "Cover to bar centre", "mm", 1]];
+const COL_MORE = [["hst", "Storey height", "mm", 1], ["kEff", "Effective length factor", "", 1], ["tieDia", "Hoop bar", "mm", 1], ["clearCover", "Clear cover", "mm", 1],
+  ["VuX", "Analysis shear, X", "kN", 0], ["VuY", "Analysis shear, Y", "kN", 0]];
+const BEAM = [["b", "Width b", "mm", 1], ["D", "Depth D", "mm", 1], ["cover", "Cover to bar centroid", "mm", 1], ["Lc", "Clear span", "mm", 1],
+  ["top", "Top steel at face", "mm²", 1], ["bot", "Bottom steel at face", "mm²", 1], ["farTop", "Top at far end", "mm²", 0], ["farBot", "Bottom at far end", "mm²", 0],
+  ["midTop", "Top at midspan", "mm²", 0], ["midBot", "Bottom at midspan", "mm²", 0], ["maxDia", "Largest bar", "mm", 1], ["minDia", "Smallest bar", "mm", 1],
+  ["MuHog", "Hogging Mu at face", "kN·m", 1], ["MuSag", "Sagging Mu at face", "kN·m", 1], ["MuMid", "Midspan sagging Mu", "kN·m", 0], ["VuAnalysis", "Analysis shear", "kN", 0],
+  ["wDL_LL", "Gravity load DL+LL", "kN/m", 1], ["bf", "Flange width bf", "mm", 1], ["Df", "Slab thickness", "mm", 1], ["slabAs", "Slab bars within bf", "mm²", 0]];
+const SOFT_COL = [["cx", "Column cx", "mm"], ["cy", "Column cy", "mm"], ["nx", "Bars per X-face", ""], ["ny", "Bars per Y-face", ""], ["Asc", "Column Asc", "mm²"], ["tieDia", "Hoop bar", "mm"]];
+const SOFT_BEAM = [["b", "b", "mm"], ["D", "D", "mm"], ["top", "Top at face", "mm²"], ["bot", "Bottom at face", "mm²"], ["midTop", "Top midspan", "mm²"], ["midBot", "Bottom midspan", "mm²"]];
+
+const fieldHTML = (id, label, unit = "", required = false, cls = "") =>
+  `<div class="field ${cls}"><label for="${id}"><span>${label}</span><span class="unit">${unit}</span></label>
+   <input id="${id}" name="${id}" type="number" step="any" inputmode="decimal" autocomplete="off" ${required ? "data-req" : ""} aria-describedby="${id}-err"><span class="err" id="${id}-err"></span></div>`;
+const selectHTML = (id, label, opts, cls = "") =>
+  `<div class="field ${cls}"><label for="${id}"><span>${label}</span></label><select id="${id}">${opts.map(([v, t]) => `<option value="${v}">${t}</option>`).join("")}</select></div>`;
+const checkHTML = (id, label) => `<label class="check"><input type="checkbox" id="${id}"><span>${label}</span></label>`;
+const chev = `<svg class="chev" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>`;
+const section = (i, title, hint, body, open = false) =>
+  `<details class="sec" ${open ? "open" : ""}><summary>${chev}<span class="idx">${String(i).padStart(2, "0")}</span><span class="ttl">${title}</span><span class="hint">${hint}</span></summary><div class="sec-body">${body}</div></details>`;
+
+$("form").innerHTML = [
+  section(1, "Materials & building", "M · Fe · zone", `<div class="fields">
+    ${selectHTML("fck", "Concrete", GRADES.map((g) => [g, "M" + g]))}
+    ${selectHTML("fy", "Steel", [[415, "Fe415"], [500, "Fe500"], [550, "Fe550"]])}
+    ${fieldHTML("height", "Building height", "m", true)}
+    ${selectHTML("zone", "Seismic zone", [[2, "II"], [3, "III"], [4, "IV"], [5, "V"]])}
+    ${fieldHTML("storeys", "Storeys", "", true)}</div>`, true),
+  section(2, "Column below the joint", "size · bars", `<div class="fields">${COL.map(([k, l, u, r]) => fieldHTML("col_" + k, l, u, r)).join("")}${COL_MORE.map(([k, l, u, r]) => fieldHTML("col_" + k, l, u, r)).join("")}</div>
+    <p class="help">X-faces have length cx. Clear height is taken as storey height minus the deepest beam.</p>`),
+  section(3, "Column above the joint", "size · bars", `${checkHTML("above_same", "Same section as the column below")}
+    <div class="fields" id="aboveFields" style="margin-top:10px">${COL.map(([k, l, u]) => fieldHTML("above_" + k, l, u)).join("")}</div>
+    <p class="help">Its axial load is the 4th value on each load-combination line.</p>`),
+  ...["X", "Y"].map((d, i) => section(4 + i, `Beam along ${d}`, "size · bars · forces", `${checkHTML(d + "_present", `Beams in ${d} frame into this joint`)}
+    <div class="fields" style="margin-top:10px">${BEAM.map(([k, l, u, r]) => fieldHTML(`${d}_${k}`, l, u, r)).join("")}</div>
+    <div style="margin-top:10px">${checkHTML(d + "_useFlange", "Use the slab as a T-beam flange for sagging")}</div>
+    <p class="help">Same section on both sides of the joint. Slab bars yield with the beam and raise its over-strength.</p>`)),
+  section(6, "Joint", "faces · roof", `<div class="fields">
+    ${checkHTML("Xleft", "X beam on left")}${checkHTML("Xright", "X beam on right")}
+    ${checkHTML("Yleft", "Y beam in front")}${checkHTML("Yright", "Y beam behind")}
+    ${checkHTML("roof", "Roof joint")}
+    ${selectHTML("confinedFaces", "Faces confined by beams", [["auto", "Auto (beam ≥ ¾ face)"], [4, "4"], [3, "3"], [2, "2 or fewer"]], "wide")}</div>`),
+  section(7, "Earthquake load combinations", "Pu · Mux · Muy", `<div class="field"><label for="combos"><span>One combination per line</span><span class="unit">kN, kN·m</span></label>
+    <textarea id="combos" spellcheck="false" aria-describedby="combos-err combos-help"></textarea><span class="err" id="combos-err"></span></div>
+    <p class="help" id="combos-help">Pu, Mux, Muy, Pu above — compression positive, Mux from shaking in X. Pu above is optional.</p>`),
+  section(8, "Design options", "margin · limits · order", `<div class="fields">
+    ${fieldHTML("margin", "Margin over demand", "%")}${fieldHTML("sizeStep", "Size increment", "mm")}
+    ${fieldHTML("maxColDim", "Largest column side", "mm")}${fieldHTML("maxBeamD", "Deepest beam", "mm")}
+    ${selectHTML("strategy", "If joint shear fails, try", [["column,beam,grade", "Column → beam → grade"], ["beam,column,grade", "Beam → column → grade"], ["grade,column,beam", "Grade → column → beam"]], "wide")}
+    ${selectHTML("PuForMc", "Column capacity for the 1.4 check", [["actual", "Least over actual combinations (code)"], ["zero", "At Pu = 0 only (EQ22 shortcut)"]], "wide")}
+    <div class="wide">${checkHTML("lockColumn", "Keep column size, change steel only")}${checkHTML("lockBeams", "Keep beam sizes")}${checkHTML("allowGrade", "Allow a higher concrete grade (whole floor)")}</div></div>`),
+  section(9, "Software design to compare", "optional", `${checkHTML("soft_on", "Compare with the STAAD / ETABS design")}
+    <div class="fields" style="margin-top:10px">${SOFT_COL.map(([k, l, u]) => fieldHTML("soft_col_" + k, l, u)).join("")}</div>
+    ${["X", "Y"].map((d) => `<fieldset class="sub"><legend>Beam ${d}</legend><div class="fields">${SOFT_BEAM.map(([k, l, u]) => fieldHTML(`soft_${d}_${k}`, l, u)).join("")}</div></fieldset>`).join("")}
+    <p class="help">Checked with the same forces, so the comparison is like for like.</p>`),
+  section(10, "Rates for cost", "₹", `<div class="fields">${fieldHTML("rate_steel", "Steel", "₹/kg")}${fieldHTML("rate_formwork", "Formwork", "₹/m²")}
+    ${GRADES.map((g) => fieldHTML("rate_c" + g, "M" + g + " concrete", "₹/m³")).join("")}</div><p class="help">Placeholders — enter current local rates.</p>`),
+].join("");
+
+/* ---------------- form <-> state ---------------- */
+function setVal(id, v) { const el = $(id); if (!el) return; if (el.type === "checkbox") el.checked = !!v; else el.value = v ?? ""; }
+function setForm(s) {
+  setVal("fck", s.mat.fck); setVal("fy", s.mat.fy);
+  for (const k of ["height", "zone", "storeys"]) setVal(k, s.building[k]);
+  const o = s.options || {};
+  for (const k of ["margin", "sizeStep", "maxColDim", "maxBeamD", "lockColumn", "lockBeams", "allowGrade"]) setVal(k, o[k]);
+  setVal("strategy", (o.jointStrategy || ["column", "beam", "grade"]).join(","));
+  setVal("PuForMc", s.joint.PuForMc === "zero" ? "zero" : "actual");
+  for (const [k] of [...COL, ...COL_MORE]) setVal("col_" + k, k === "VuX" ? (s.col.Vu || {}).X : k === "VuY" ? (s.col.Vu || {}).Y : s.col[k]);
+  const ab = s.colAbove || { same: true };
+  setVal("above_same", ab.same);
+  for (const [k] of COL) setVal("above_" + k, ab.same ? s.col[k] : ab[k]);
+  for (const d of ["X", "Y"]) { const b = s.beams[d]; setVal(d + "_present", b.present); setVal(d + "_useFlange", b.useFlange); for (const [k] of BEAM) setVal(`${d}_${k}`, b[k]); }
+  setVal("Xleft", s.joint.X.left); setVal("Xright", s.joint.X.right); setVal("Yleft", s.joint.Y.left); setVal("Yright", s.joint.Y.right);
+  setVal("roof", s.joint.roof); setVal("confinedFaces", s.joint.confinedFaces ?? "auto");
+  $("combos").value = s.combos.map((c) => [c.Pu, c.Mux, c.Muy, c.PuAbove].filter((x) => x != null).join(", ")).join("\n");
+  const sw = s.software; setVal("soft_on", !!(sw && sw.on));
+  if (sw) { for (const [k] of SOFT_COL) setVal("soft_col_" + k, sw.col[k]); for (const d of ["X", "Y"]) for (const [k] of SOFT_BEAM) setVal(`soft_${d}_${k}`, sw.beams[d][k]); }
+  const r = s.costs || {}; setVal("rate_steel", r.steel); setVal("rate_formwork", r.formwork);
+  for (const g of GRADES) setVal("rate_c" + g, (r.concrete || {})[g]);
+  clearErrors(); syncDim();
+}
+
+function syncDim() {
+  $("aboveFields").classList.toggle("dim", $("above_same").checked);
+  for (const d of ["X", "Y"]) $(`${d}_b`).closest(".fields").classList.toggle("dim", !$(d + "_present").checked);
+}
+
+function clearErrors() {
+  document.querySelectorAll(".field.invalid").forEach((f) => f.classList.remove("invalid"));
+  document.querySelectorAll(".err").forEach((e) => (e.textContent = ""));
+  document.querySelectorAll("details.sec.has-error").forEach((d) => d.classList.remove("has-error"));
+}
+function fieldError(id, msg) {
+  const el = $(id), f = el.closest(".field"); f.classList.add("invalid"); $(id + "-err").textContent = msg;
+  el.setAttribute("aria-invalid", "true"); el.closest("details").classList.add("has-error");
+}
+function validateField(el) {
+  const f = el.closest(".field"); if (!f || f.closest(".dim")) return true;
+  const req = el.hasAttribute("data-req"), v = el.value.trim();
+  f.classList.remove("invalid"); el.removeAttribute("aria-invalid"); const err = $(el.id + "-err"); if (err) err.textContent = "";
+  if (req && v === "") { fieldError(el.id, "Enter a value"); return false; }
+  if (v !== "" && !isFinite(parseFloat(v))) { fieldError(el.id, "Enter a number"); return false; }
+  if (v !== "" && parseFloat(v) < 0) { fieldError(el.id, "Must be positive"); return false; }
+  return true;
+}
+
+function getForm() {
+  clearErrors();
+  let firstBad = null;
+  const bad = (id, msg) => { fieldError(id, msg); firstBad = firstBad || id; };
+  const n = (id, required = true) => {
+    const raw = $(id).value.trim(), v = parseFloat(raw);
+    if (!isFinite(v)) { if (required) bad(id, "Enter a value"); return undefined; }
+    if (v < 0) bad(id, "Must be positive");
+    return v;
+  };
+  const c = (id) => $(id).checked;
+  const col = {};
+  for (const [k, , , r] of [...COL, ...COL_MORE]) col[k] = n("col_" + k, !!r) || 0;
+  col.Vu = { X: col.VuX, Y: col.VuY };
+  if (!(col.cornerDia > 0 && col.otherDia > 0) && !(col.Asc > 0)) bad("col_Asc", "Give bar diameters or total Asc");
+  if (col.nx < 2) bad("col_nx", "At least 2"); if (col.ny < 2) bad("col_ny", "At least 2");
+  const colAbove = { same: c("above_same") };
+  if (!colAbove.same) { for (const [k, , , r] of COL) colAbove[k] = n("above_" + k, !!r) || 0; Object.assign(colAbove, { clearCover: col.clearCover, hst: col.hst, kEff: col.kEff }); }
+  const beams = {};
+  for (const d of ["X", "Y"]) {
+    const present = c(d + "_present");
+    beams[d] = { present, useFlange: c(d + "_useFlange"), slabCover: 30 };
+    for (const [k, , , r] of BEAM) beams[d][k] = n(`${d}_${k}`, present && !!r) ?? 0;
+    if (!beams[d].farTop) beams[d].farTop = beams[d].top;
+    if (!beams[d].farBot) beams[d].farBot = beams[d].bot;
+  }
+  if (!beams.X.present && !beams.Y.present) bad("X_b", "At least one beam direction is needed");
+  const lines = $("combos").value.split("\n").map((l) => l.trim()).filter(Boolean);
+  const combos = [];
+  lines.forEach((l, i) => {
+    const p = l.split(/[,\s\t]+/).filter(Boolean).map(Number);
+    if (p.length < 3 || p.some((x) => !isFinite(x))) { if (!firstBad) bad("combos", `Line ${i + 1}: needs Pu, Mux, Muy`); return; }
+    combos.push({ Pu: p[0], Mux: p[1], Muy: p[2], PuAbove: p[3] ?? p[0] });
+  });
+  if (!lines.length) bad("combos", "Enter at least one load combination");
+  const software = { on: c("soft_on"), col: {}, beams: { X: {}, Y: {} } };
+  for (const [k] of SOFT_COL) software.col[k] = n("soft_col_" + k, software.on) ?? 0;
+  for (const d of ["X", "Y"]) for (const [k] of SOFT_BEAM) software.beams[d][k] = n(`soft_${d}_${k}`, software.on && beams[d].present) ?? 0;
+  const concrete = {}; for (const g of GRADES) concrete[g] = n("rate_c" + g, false) || 7000;
+  const out = {
+    mat: { fck: +$("fck").value, fy: +$("fy").value },
+    building: { height: n("height"), zone: +$("zone").value, storeys: n("storeys") },
+    col, colAbove, beams, combos, software,
+    joint: { X: { left: c("Xleft"), right: c("Xright") }, Y: { left: c("Yleft"), right: c("Yright") }, roof: c("roof"),
+      confinedFaces: $("confinedFaces").value === "auto" ? undefined : Number($("confinedFaces").value), PuForMc: $("PuForMc").value },
+    options: { margin: n("margin", false) || 0, sizeStep: n("sizeStep", false) || 50, maxColDim: n("maxColDim", false) || 900, maxBeamD: n("maxBeamD", false) || 900,
+      lockColumn: c("lockColumn"), lockBeams: c("lockBeams"), allowGrade: c("allowGrade"), jointStrategy: $("strategy").value.split(",") },
+    costs: { steel: n("rate_steel", false) || 80, formwork: n("rate_formwork", false) || 600, concrete },
+  };
+  if (firstBad) {
+    const el = $(firstBad); el.closest("details").open = true;
+    el.scrollIntoView({ block: "center", behavior: "smooth" }); el.focus({ preventScroll: true });
+    throw new Error("Fix the highlighted fields");
+  }
+  return out;
+}
+
+function softwareState(inp) {
+  const sw = inp.software, s = JSON.parse(JSON.stringify(inp));
+  Object.assign(s.col, { cx: sw.col.cx, cy: sw.col.cy, nx: sw.col.nx, ny: sw.col.ny, Asc: sw.col.Asc, cornerDia: 0, otherDia: 0, tieDia: sw.col.tieDia || s.col.tieDia });
+  for (const d of ["X", "Y"]) if (s.beams[d].present) {
+    const b = sw.beams[d]; Object.assign(s.beams[d], { b: b.b, D: b.D, top: b.top, bot: b.bot, farTop: b.top, farBot: b.bot, midTop: b.midTop, midBot: b.midBot });
+  }
+  return s;
+}
+
+/* ---------------- events ---------------- */
+document.querySelectorAll("[data-example]").forEach((b) => b.addEventListener("click", () => {
+  setForm(EXAMPLES[b.dataset.example]);
+  document.querySelectorAll("[data-example]").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+  $("runStatus").textContent = "Example loaded";
+}));
+$("form").addEventListener("focusout", (e) => { if (e.target.matches("input[type=number]")) validateField(e.target); });
+$("form").addEventListener("input", (e) => {
+  if (e.target.closest(".field.invalid")) validateField(e.target);
+  document.querySelectorAll("[data-example]").forEach((x) => x.setAttribute("aria-pressed", "false"));
+});
+$("form").addEventListener("change", (e) => { if (e.target.type === "checkbox") syncDim(); });
+$("saveBtn").addEventListener("click", () => {
+  try {
+    const blob = new Blob([JSON.stringify(getForm(), null, 2)], { type: "application/json" });
+    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "joint-input.json"; a.click();
+    $("runStatus").textContent = "Input saved";
+  } catch (e) { $("runStatus").textContent = e.message; }
+});
+$("loadBtn").addEventListener("click", () => $("loadFile").click());
+$("loadFile").addEventListener("change", (e) => {
+  const f = e.target.files[0]; if (!f) return;
+  f.text().then((t) => { setForm(JSON.parse(t)); $("runStatus").textContent = `Opened ${f.name}`; })
+    .catch(() => { $("runStatus").textContent = "That file is not a saved input"; });
+});
+$("runBtn").addEventListener("click", run);
+
+/* ---------------- run (web worker, inline fallback) ---------------- */
+let worker = null, lastRefined = null, lastInput = null;
+try { worker = new Worker("worker.js"); } catch (e) { worker = null; }
+
+function run() {
+  let input;
+  try { input = getForm(); } catch (e) { $("runStatus").textContent = e.message; return; }
+  lastInput = input;
+  $("runBtn").disabled = true; $("runStatus").textContent = "Working…";
+  renderLoading("Checking the initial design");
+  const sw = input.software.on ? softwareState(input) : null;
+  const done = (r) => {
+    $("runBtn").disabled = false; $("runStatus").textContent = "Done";
+    lastRefined = { ...r.refined.state, software: input.software, costs: input.costs };
+    render(input, r.initial, r.refined, r.simple, r.soft);
+  };
+  const fail = (msg) => { $("runBtn").disabled = false; $("runStatus").textContent = ""; renderError(msg); };
+  const inline = () => setTimeout(() => {
+    try {
+      const initial = E.evaluate(input);
+      const refined = E.redesign({ ...input, options: { ...input.options, conservative: false } });
+      const simple = E.redesign({ ...input, options: { ...input.options, conservative: true } });
+      done({ initial, refined, simple, soft: sw ? E.evaluate(sw) : null });
+    } catch (e) { fail(e.message); }
+  }, 40);
+  if (!worker) return inline();
+  worker.onmessage = (ev) => {
+    const m = ev.data;
+    if (m.type === "progress") { const p = document.querySelector(".progress-line"); if (p) p.textContent = m.msg + "…"; }
+    else if (m.type === "done") done(m);
+    else fail(m.message);
+  };
+  worker.onerror = (e) => { e.preventDefault(); worker = null; inline(); };
+  worker.postMessage({ input, softwareState: sw });
+}
+
+/* ---------------- rendering ---------------- */
+const R = $("results");
+const inr = (x) => "₹" + Math.round(x).toLocaleString("en-IN");
+const f0 = (x) => Math.round(x).toLocaleString("en-IN");
+const statusChip = (s) => `<span class="chip ${s}">${s === "ok" ? "OK" : s === "warn" ? "Warning" : "Fail"}</span>`;
+const dirsOf = (st) => ["X", "Y"].filter((d) => st.beams[d].present);
+const nFail = (r) => r.checks.filter((c) => c.status === "fail").length;
+const nWarn = (r) => r.checks.filter((c) => c.status === "warn").length;
+
+function renderEmpty() {
+  R.innerHTML = `<div class="empty reveal">
+    <div style="--i:0">
+      <p class="eyebrow">IS 13920:2016 · capacity design</p>
+      <h1>Check a beam-column joint for earthquake loading, then redesign it.</h1>
+      <p>Enter the initial design and the forces from your analysis. The checks follow the order the code intends the joint to fail in: beams yield in bending before they fail in shear, and before the columns and the joint.</p>
+      <ol>
+        <li>Pick an example or enter your own joint on the left.</li>
+        <li>Press <b>Check &amp; redesign</b>.</li>
+        <li>Read the failed checks, the revised design and the reinforcement schedule.</li>
+      </ol>
+      <div class="actions">
+        <button class="btn primary" type="button" onclick="document.querySelector('[data-example=HEALTH_CENTRE]').click(); run();">Run the Health Centre joint</button>
+        <a class="btn" href="https://github.com/gvrathodd/Seismic-redesign-automation/blob/main/EXPLAINER.md">How it works</a>
+      </div>
+    </div>
+    <svg class="joint-art" viewBox="0 0 400 400" role="img" aria-label="Beam-column joint with plastic hinges forming in the beams next to the column" style="--i:1">
+      <rect x="170" y="20" width="60" height="360" rx="4" fill="#e9e9e7"/>
+      <rect x="20" y="170" width="360" height="60" rx="4" fill="#d9d9d6"/>
+      <rect x="170" y="170" width="60" height="60" fill="#18181b"/>
+      <circle class="hinge" cx="135" cy="200" r="13" fill="none" stroke="#2f55c8" stroke-width="3"/>
+      <circle class="hinge" cx="265" cy="200" r="13" fill="none" stroke="#2f55c8" stroke-width="3"/>
+      <circle class="hinge" cx="135" cy="200" r="4" fill="#2f55c8"/>
+      <circle class="hinge" cx="265" cy="200" r="4" fill="#2f55c8"/>
+      <path d="M40 120 l30 0 m-6 -6 l6 6 l-6 6" stroke="#6b6b72" stroke-width="2" fill="none"/>
+      <text x="40" y="108" font-family="Geist Mono, monospace" font-size="12" fill="#6b6b72">sway</text>
+      <text x="96" y="256" font-family="Geist Mono, monospace" font-size="12" fill="#2f55c8">hinge</text>
+      <text x="246" y="256" font-family="Geist Mono, monospace" font-size="12" fill="#2f55c8">hinge</text>
+      <text x="242" y="40" font-family="Geist Mono, monospace" font-size="12" fill="#6b6b72">column ≥ 1.4 × beams</text>
+    </svg>
+  </div>`;
+}
+
+function renderLoading(msg) {
+  R.innerHTML = `<div class="skeleton" aria-busy="true">
+    <p class="progress-line">${esc(msg)}…</p>
+    <div class="sk" style="height:84px;width:70%"></div>
+    <div class="sk" style="height:96px"></div>
+    <div class="sk" style="height:260px"></div>
+    <div class="sk" style="height:200px"></div></div>`;
+}
+
+function renderError(msg) {
+  R.innerHTML = `<div class="banner fail" role="alert">${icon("x")}<p><b>Could not complete the calculation.</b> ${esc(msg)}</p><span></span></div>`;
+}
+
+function icon(kind) {
+  const p = { ok: "M4 8.5l2.5 2.5L12 5.5", warn: "M8 4v5M8 11.5v.5", x: "M5 5l6 6M11 5l-6 6" }[kind];
+  return `<svg width="18" height="18" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="7.2" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="${p}" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>`;
+}
+
+// demand / capacity for the bars chart
+function utilisation(st, res) {
+  const m = 1 + ((st.options || {}).margin || 0) / 100;
+  const rows = [];
+  for (const d of dirsOf(st)) {
+    const b = st.beams[d], r = res.beams[d];
+    rows.push({ key: `bflex${d}`, label: `Beam ${d} bending`, sub: "Mu,hog ÷ capacity", v: (b.MuHog * m) / r.caps.hog.Mu });
+    rows.push({ key: `bshear${d}`, label: `Beam ${d} shear`, sub: "τv ÷ τc,max", v: r.shear.tv / r.shear.tmax });
+  }
+  rows.push({ key: "pm", label: "Column P-M", sub: "biaxial interaction", v: res.column.biaxial.util });
+  for (const d of dirsOf(st)) rows.push({ key: `scwb${d}`, label: `Strong column ${d}`, sub: "1.4 ΣMb ÷ ΣMc", v: 1.4 / res.column["ratio" + d] });
+  for (const d of dirsOf(st)) rows.push({ key: `joint${d}`, label: `Joint shear ${d}`, sub: "Vj ÷ capacity", v: res.joint[d].ratio });
+  return rows;
+}
+
+function utilChart(input, initial, refStA, refined) {
+  const a = utilisation(input, initial), b = Object.fromEntries(utilisation(refStA, refined).map((r) => [r.key, r]));
+  const max = Math.max(2, ...a.map((r) => r.v), ...Object.values(b).map((r) => r.v));
+  const scale = (v) => Math.min(v / max, 1) * 100;
+  const pos = scale(1);
+  return `<div class="util">
+    <div class="util-legend"><span><i style="background:#c9c9cf"></i>Initial design</span><span><i style="background:#18181b"></i>Revised design</span>
+      <span><i style="border-top:1.5px dashed var(--fail);height:0;width:18px"></i>Capacity (1.00)</span></div>
+    ${a.map((r, i) => { const rv = b[r.key] ? b[r.key].v : null; return `<div class="urow">
+      <div class="lbl">${r.label}<small>${r.sub}</small></div>
+      <div class="bars" role="img" aria-label="${r.label}: initial ${r.v.toFixed(2)}${rv != null ? ", revised " + rv.toFixed(2) : ""}">
+        ${i === 0 ? `<span class="limit-lbl" style="left:${pos}%">1.00</span>` : ""}
+        <div class="bar initial ${r.v > 1 ? "over" : ""}"><span style="width:${scale(r.v)}%"></span><em class="num">${r.v.toFixed(2)}</em></div>
+        ${rv != null ? `<div class="bar revised"><span style="width:${scale(rv)}%"></span><em class="num" style="${scale(rv) > 88 ? "color:#fafafa" : ""}">${rv.toFixed(2)}</em></div>` : ""}
+        <span class="limit" style="left:${pos}%"></span>
+      </div></div>`; }).join("")}
+  </div>`;
+}
+
+function memberText(st, res) {
+  const c = st.col, cb = E.colBars(c);
+  const beams = {};
+  for (const d of dirsOf(st)) {
+    const b = st.beams[d];
+    beams[d] = `<span class="num">${b.b} × ${b.D}</span><br><span class="note">top ${esc(b.topText || f0(b.top) + " mm²")} · bottom ${esc(b.botText || f0(b.bot) + " mm²")}</span>`;
+  }
+  return {
+    col: `<span class="num">${c.cx} × ${c.cy}</span><br><span class="note">${esc(c.barText || f0(cb.Asc) + " mm²")} · ${(100 * cb.Asc / (c.cx * c.cy)).toFixed(2)} %</span>`,
+    hoops: `<span class="num">${res.hoops.tieDia} @ ${res.hoops.s}</span><br><span class="note">${res.hoops.legsAlongX} × ${res.hoops.legsAlongY} legs in lo</span>`,
+    beams,
+  };
+}
+
+function compareTable(cols) {
+  const best = Math.min(...cols.filter((c) => c.res.ok).map((c) => c.res.qty.cost));
+  const row = (label, fn, cls = "") => `<tr><th scope="row">${label}</th>${cols.map((c) => `<td class="${cls}">${fn(c)}</td>`).join("")}</tr>`;
+  const dirs = dirsOf(cols[0].st);
+  return `<div class="tablewrap"><table class="cmp"><thead><tr><th></th>${cols.map((c) => `<th class="colhead"><b>${c.title}</b><small>${c.sub}</small></th>`).join("")}</tr></thead><tbody>
+    ${row("Result", (c) => nFail(c.res) ? `<span class="chip fail">${nFail(c.res)} fail</span>` : nWarn(c.res) ? `<span class="chip warn">${nWarn(c.res)} warning</span>` : `<span class="chip ok">All pass</span>`)}
+    ${row("Concrete", (c) => `<span class="num">M${c.st.mat.fck} · Fe${c.st.mat.fy}</span>`)}
+    ${row("Column", (c) => memberText(c.st, c.res).col)}
+    ${row("Hoops in lo", (c) => memberText(c.st, c.res).hoops)}
+    ${dirs.map((d) => row(`Beam ${d}`, (c) => memberText(c.st, c.res).beams[d])).join("")}
+    ${row("ΣMc / ΣMb", (c) => `<span class="num">${dirs.map((d) => c.res.column["ratio" + d].toFixed(2)).join(" / ")}</span>`)}
+    ${row("Joint shear used", (c) => `<span class="num">${dirs.map((d) => Math.round(100 * c.res.joint[d].ratio) + " %").join(" / ")}</span>`)}
+    ${row("Steel + links", (c) => `<span class="num">${f0(c.res.qty.steelKg)} + ${f0(c.res.qty.linksKg)} kg</span>`)}
+    ${row("Concrete · formwork", (c) => `<span class="num">${c.res.qty.concreteM3.toFixed(2)} m³ · ${c.res.qty.formworkM2.toFixed(1)} m²</span>`)}
+    <tr><th scope="row">Cost*</th>${cols.map((c) => `<td class="${c.res.ok && Math.abs(c.res.qty.cost - best) < 1 ? "best" : ""}"><span class="num" style="font-size:15px">${inr(c.res.qty.cost)}</span>${c.res.ok && Math.abs(c.res.qty.cost - best) < 1 ? '<br><span class="note">lowest passing</span>' : ""}</td>`).join("")}</tr>
+  </tbody></table></div>
+  <p class="note" style="margin-top:8px">* Beams on both sides of the joint over their clear spans and one storey of column; rates from section 10 of the input.</p>`;
+}
+
+function checksTable(res, id) {
+  return `<div class="tablewrap"><table id="${id}"><thead><tr><th>Step</th><th>Clause</th><th>Check</th><th>Value</th><th>Limit</th><th>Status</th></tr></thead><tbody>
+    ${res.checks.map((c) => `<tr class="is-${c.status}" data-status="${c.status}"><td>${esc(c.step)}</td><td class="num">${esc(c.clause)}</td>
+      <td>${esc(c.item)}${c.note ? `<br><span class="note">${esc(c.note)}</span>` : ""}</td><td class="num">${esc(c.value)}</td><td class="num">${esc(c.limit)}</td><td>${statusChip(c.status)}</td></tr>`).join("")}
+  </tbody></table></div>`;
+}
+
+function scheduleTable(st, res) {
+  const rows = [];
+  for (const d of dirsOf(st)) {
+    const b = st.beams[d], Ld = E.devLength(b.maxDia || 20, st.mat.fy, st.mat.fck);
+    rows.push([`Beam ${d}<br><span class="note num">${b.b} × ${b.D}</span>`,
+      `Top at face <span class="num">${esc(b.topText)}</span><br>Bottom at face <span class="num">${esc(b.botText)}</span><br>Top continuous <span class="num">${esc(b.midTopText)}</span><br>Bottom at midspan <span class="num">${esc(b.midBotText)}</span>`,
+      esc(res.beams[d].shear.text), `<span class="num">${Math.ceil(Ld / 10) * 10} mm</span> — outside the joint and 2d from the face, ≤ 50 % at a section, links ≤ 150 over laps`]);
+  }
+  const c = st.col, h = res.hoops, LdC = E.devLength(E.colBars(c).maxDia, st.mat.fy, st.mat.fck);
+  rows.push([`Column<br><span class="note num">${c.cx} × ${c.cy}</span>`, `<span class="num">${esc(c.barText)}</span><br><span class="note">${c.nx} per X-face, ${c.ny} per Y-face</span>`,
+    `<span class="num">${h.tieDia} mm</span>, ${h.legsAlongX} × ${h.legsAlongY} legs @ <span class="num">${h.s}</span> over lo = <span class="num">${h.lo.toFixed(0)}</span> mm at each end and through the joint; @ <span class="num">${h.sMid}</span> elsewhere. 135° hooks, 8φ ≥ 75 mm`,
+    `<span class="num">${Math.ceil(LdC / 10) * 10} mm</span> — middle half of the clear height, ≤ 50 % at a section, hoops ≤ 100 over laps`]);
+  return `<div class="tablewrap"><table><thead><tr><th>Member</th><th>Main bars</th><th>Links / hoops</th><th>Laps</th></tr></thead><tbody>
+    ${rows.map((r) => `<tr>${r.map((x) => `<td>${x}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`;
+}
+
+function render(input, initial, refined, simple, soft) {
+  const rs = refined.state, rr = refined.result;
+  const fails = nFail(initial), total = initial.checks.length;
+  const qR = rr.qty, qS = simple.result.qty;
+  const pct = (a, b) => (100 * (1 - a / b));
+  const dirs = dirsOf(rs);
+
+  let banner;
+  if (!rr.ok) banner = `<div class="banner fail" role="status">${icon("x")}<p><b>No passing design within the limits set.</b> Relax the size locks or limits in Design options, or check the forces.</p><span></span></div>`;
+  else if (refined.reanalysis.length) banner = `<div class="banner warn" role="status">${icon("warn")}<p><b>Provisional — re-analysis required.</b> Stiffness changed by more than 10 %: ${refined.reanalysis.map(esc).join("; ")}. Put these sizes into the structural model, re-run it, enter the new forces and run again.</p>
+      <button class="btn noprint" type="button" onclick="useRevised()">Use revised sizes as input</button></div>`;
+  else banner = `<div class="banner ok" role="status">${icon("ok")}<p><b>Final design.</b> No member stiffness changed by more than 10 %, so the analysis forces still apply.</p><span></span></div>`;
+
+  const cols = [
+    { title: "Initial", sub: "as entered", st: input, res: initial },
+    { title: "Refined redesign", sub: "doubly reinforced, exact", st: rs, res: rr },
+    { title: "Textbook redesign", sub: "singly reinf., Pu = 0", st: simple.state, res: simple.result },
+  ];
+  if (soft) cols.push({ title: "Software design", sub: "as entered", st: softwareState(input), res: soft });
+
+  const saveVsText = pct(qR.cost, qS.cost);
+  R.innerHTML = `<div class="res reveal">
+    <nav class="subnav noprint" aria-label="Results" style="--i:0"><a href="#sum">Summary</a><a href="#util">Utilisation</a><a href="#cmp">Comparison</a><a href="#sched">Schedule</a><a href="#path">Redesign steps</a><a href="#checks">All checks</a></nav>
+
+    <div class="verdict" id="sum" style="--i:1">
+      <div>
+        <span class="chip ${fails ? "fail" : "ok"}">${fails ? "Initial design fails" : "Initial design passes"}</span>
+        <h1>${fails ? `${fails} of ${total} checks fail. The revised design passes all of them.` : `All ${total} checks pass. The redesign looks for a lighter solution.`}</h1>
+        <p>${rr.ok ? `Revised: column <span class="num">${rs.col.cx} × ${rs.col.cy}</span> with <span class="num">${esc(rs.col.barText)}</span>; ${dirs.map((d) => `beam ${d} <span class="num">${rs.beams[d].b} × ${rs.beams[d].D}</span>`).join(", ")}; <span class="num">M${rs.mat.fck}</span>.` : "No passing design was found within the limits."}</p>
+      </div>
+      <div class="note" style="text-align:right">${input.combos.length} load combinations · margin ${(input.options.margin || 0)} % · Zone ${["", "", "II", "III", "IV", "V"][input.building.zone]}</div>
+    </div>
+
+    <div class="kpis" style="--i:2">
+      <div class="kpi"><div class="k">Revised column</div><div class="v">${rs.col.cx}<small> × </small>${rs.col.cy}</div><div class="s">was ${input.col.cx} × ${input.col.cy} · ${esc(rs.col.barText)}</div></div>
+      <div class="kpi"><div class="k">Strong column ratio</div><div class="v">${Math.min(...dirs.map((d) => rr.column["ratio" + d])).toFixed(2)}</div><div class="s">need ≥ 1.40 · was ${Math.min(...dirs.map((d) => initial.column["ratio" + d])).toFixed(2)}</div></div>
+      <div class="kpi"><div class="k">Joint shear used</div><div class="v">${Math.round(100 * Math.max(...dirs.map((d) => rr.joint[d].ratio)))}<small> %</small></div><div class="s">was ${Math.round(100 * Math.max(...dirs.map((d) => initial.joint[d].ratio)))} %</div></div>
+      <div class="kpi"><div class="k">Cost vs textbook</div><div class="v">${saveVsText >= 0 ? "−" : "+"}${Math.abs(saveVsText).toFixed(1)}<small> %</small></div><div class="s">${inr(qR.cost)} vs ${inr(qS.cost)}</div></div>
+    </div>
+
+    <div style="--i:3;margin-top:24px">${banner}</div>
+
+    <section class="block" id="util" style="--i:4"><header><h2>Utilisation</h2><p>Demand ÷ capacity — anything past 1.00 fails.</p></header>
+      ${utilChart(input, initial, rs, rr)}</section>
+
+    <section class="block" id="cmp" style="--i:5"><header><h2>Design comparison</h2><p>Same forces, same code checks.</p></header>
+      ${compareTable(cols)}</section>
+
+    <section class="block" id="sched" style="--i:6"><header><h2>Reinforcement schedule</h2><p>Refined redesign.</p></header>
+      ${rr.ok ? scheduleTable(rs, rr) : '<p class="note">Not available — no passing design.</p>'}</section>
+
+    <section class="block two" id="path" style="--i:7">
+      <div><header style="margin-bottom:12px"><h2>Redesign steps</h2></header>
+        <ol class="path">${refined.log.map((l) => `<li>${esc(l)}</li>`).join("") || "<li>No size changes; steel re-optimised only.</li>"}</ol></div>
+      <div class="prose"><header style="margin-bottom:12px"><h2>Reading the result</h2></header>
+        <ul>
+          <li>Beams are the fuse: they are designed for the analysis moments, and every later check uses their real over-strength, including slab bars.</li>
+          <li>Beam links carry the shear that exists once both ends have hinged, so bending fails first.</li>
+          <li>Columns are 1.4 × stronger than the beams at the joint, so hinges form in beams, not columns.</li>
+          <li>The joint carries beam bars at 1.25 fy. It often decides the column size.</li>
+        </ul></div>
+    </section>
+
+    <section class="block" id="checks" style="--i:8"><header><h2>All checks</h2>
+      <div class="filters noprint" role="group" aria-label="Filter checks">
+        <button type="button" data-set="initial" aria-pressed="false">Initial</button><button type="button" data-set="refined" aria-pressed="true">Revised</button>
+        <span style="width:10px"></span>
+        <button type="button" data-filter="all" aria-pressed="true">All</button><button type="button" data-filter="fail" aria-pressed="false">Fail</button><button type="button" data-filter="warn" aria-pressed="false">Warnings</button>
+      </div></header>
+      <div id="checksHolder"></div></section>
+
+    <footer class="site"><span>Not covered: torsion, walls, flat slabs, foundations, irregular buildings.</span><span>Forces come from your analysis — re-analyse after size changes.</span>
+      <button class="linkbtn noprint" type="button" onclick="window.print()">Print / save as PDF</button></footer>
+  </div>`;
+
+  const sets = { initial, refined: rr };
+  let cur = "refined", filt = "all";
+  const draw = () => {
+    $("checksHolder").innerHTML = checksTable(sets[cur], "checkTable");
+    document.querySelectorAll("#checkTable tbody tr").forEach((tr) => { tr.hidden = filt !== "all" && tr.dataset.status !== filt; });
+  };
+  document.querySelectorAll("[data-set]").forEach((b) => b.addEventListener("click", () => {
+    cur = b.dataset.set; document.querySelectorAll("[data-set]").forEach((x) => x.setAttribute("aria-pressed", String(x === b))); draw(); }));
+  document.querySelectorAll("[data-filter]").forEach((b) => b.addEventListener("click", () => {
+    filt = b.dataset.filter; document.querySelectorAll("[data-filter]").forEach((x) => x.setAttribute("aria-pressed", String(x === b))); draw(); }));
+  draw();
+  if (window.matchMedia("(max-width: 1080px)").matches) R.scrollIntoView({ behavior: "smooth" });
+}
+
+function useRevised() {
+  if (!lastRefined) return;
+  setForm(lastRefined);
+  document.querySelector(".inputs-scroll").scrollTop = 0;
+  $("runStatus").textContent = "Revised sizes copied — update forces from the new analysis, then run";
+}
+
+/* ---------------- init ---------------- */
+setForm(window.HEALTH_CENTRE);
+document.querySelector("[data-example=HEALTH_CENTRE]").setAttribute("aria-pressed", "true");
+renderEmpty();
+</script>
+</body>
+</html>

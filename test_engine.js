@@ -84,5 +84,12 @@ truthy("Sizes changed, so re-analysis is flagged", r1.reanalysis.length > 0);
 const r3 = E.redesign({ ...EXAMPLE5, options: { ...EXAMPLE5.options, lockColumn: true, lockBeams: true } });
 truthy(`Locked sizes: reports failure instead of resizing (converged = ${r3.converged})`, !r3.converged && r3.state.col.cx === EXAMPLE5.col.cx);
 
+console.log("\n-- Health Centre (STAAD, Zone V): gravity-only design at column D3, first floor --");
+const { HEALTH_CENTRE } = require("./example_health_centre.js");
+const hc0 = E.evaluate(HEALTH_CENTRE);
+truthy(`Gravity-only design fails the seismic checks (${hc0.checks.filter((c) => c.status === "fail").length} failures)`, !hc0.ok);
+const hc = E.redesign(HEALTH_CENTRE);
+truthy(`Redesign passes: column ${hc.state.col.cx}×${hc.state.col.cy} ${hc.state.col.barText}, beams ${hc.state.beams.X.D} / ${hc.state.beams.Y.D} deep`, hc.result.ok);
+
 console.log(`\n${fails ? fails + " FAILED" : "All tests passed"}`);
 process.exit(fails ? 1 : 0);

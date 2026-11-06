@@ -184,7 +184,7 @@
    * neighbouring size d2 (d1 - d2 <= 6 mm, e.g. 20+16, 25+20). Two layers allowed;
    * returns the centroid shift of the bar group from the outer layer.
    */
-  function chooseBeamBars(req, b, cover, maxDia = 25, minDia = 12) {
+  function chooseBeamBars(req, b, cover, maxDia = 25, minDia = 12, maxClear = Infinity) {
     let best = null;
     const dias = BAR_DIAS.filter((d) => d >= minDia && d <= maxDia);
     for (const d1 of dias) {
@@ -209,6 +209,7 @@
             const shift = (A2 / A) * (d1 + gap);
             const k = Math.min(n, perLayer);
             const clearSpacing = (b - 2 * edge - (k * (n1 * d1 + n2 * (d2 || 0))) / n) / (k - 1);
+            if (clearSpacing > maxClear) continue; // IS 456 Cl 26.3.3 crack control
             const cand = { area: A, n, layers, shift, clearSpacing, maxDia: d1, minDia: d2 || d1,
               text: `${n1}-${d1}` + (n2 ? ` + ${n2}-${d2}` : "") + (layers === 2 ? " (2 layers)" : "") };
             if (!best || A < best.area - 1 || (Math.abs(A - best.area) <= 1 && (layers < best.layers || n < best.n))) best = cand;
@@ -466,7 +467,7 @@
   }
 
   // ---------- Full check of one design state ----------
-  function evaluate(st) {
+  function evaluate(st, scope) {
     const { mat, beams, joint, combos } = st;
     const maxD = Math.max(beams.X.present ? beams.X.D : 0, beams.Y.present ? beams.Y.D : 0);
     const col = { ...st.col, Lu: st.col.hst - maxD }; // clear height follows the deepest beam
@@ -554,6 +555,8 @@
       ΣMb[dir] = nSides === 2 ? capsOS.hog.Mu + capsOS.sag.Mu : Math.max(capsOS.hog.Mu, capsOS.sag.Mu);
       out.beams[dir] = { caps, capsOS, shear: sh, d: dH, nSides };
     }
+
+    if (scope === "beams") { out.ok = out.checks.every((c) => c.status !== "fail"); return out; }
 
     // Step 4 - column
     const Ag = col.cx * col.cy;
@@ -711,18 +714,20 @@
       const colLim = clamp(Math.floor(Math.min(s.col.cx, s.col.cy) / 20), 12, 25);
       const dLims = [...new Set([colLim, 25])];
       for (let k = 0; k < 20; k++) {
-       for (const dLim of dLims) {
-        const key = JSON.stringify([bm.b, bm.D, bm.cover, bm.MuHog, bm.MuSag, bm.MuMid, s.mat, dLim, conservative, o.margin]);
+       // bump: small extra steel when bar layering leaves capacity just short
+       for (const [dLim, bump] of dLims.flatMap((dl) => [[dl, 1], [dl, 1.03], [dl, 1.06]])) {
+        const key = JSON.stringify([bm.b, bm.D, bm.cover, bm.MuHog, bm.MuSag, bm.MuMid, s.mat, dLim, conservative, o.margin, bump]);
         let r = beamMemo.get(key);
         if (!r) {
           r = null;
           let ct = bm.cover, cb = bm.cover;
           for (let it = 0; it < 6; it++) {
             const trial = { ...bm, coverTop: ct, coverBot: cb };
-            const des = designBeamSupport(trial, s.mat, bm.MuHog * margin, bm.MuSag * margin, conservative);
+            const des = designBeamSupport(trial, s.mat, bm.MuHog * margin * bump, bm.MuSag * margin * bump, conservative);
             if (!des.ok) break;
-            const topB = chooseBeamBars(des.top, bm.b, bm.cover, dLim);
-            const botB = topB && chooseBeamBars(Math.max(des.bot, 0.5 * topB.area), bm.b, bm.cover, dLim);
+            const gapMax = crackMaxSpacing(s.mat.fy);
+            const topB = chooseBeamBars(des.top, bm.b, bm.cover, dLim, 12, gapMax);
+            const botB = topB && chooseBeamBars(Math.max(des.bot, 0.5 * topB.area), bm.b, bm.cover, dLim, 12, gapMax);
             if (!topB || !botB) break;
             const nct = Math.max(ct, bm.cover + topB.shift), ncb = Math.max(cb, bm.cover + botB.shift);
             if (nct - ct < 1 && ncb - cb < 1) {
@@ -733,7 +738,7 @@
               const pMid = { b: bm.b, d: dS, dc: ct, Asc: midTopB.area, fck: s.mat.fck, fy: s.mat.fy, bf: bm.useFlange ? bm.bf : 0, Df: bm.useFlange ? bm.Df : 0,
                 Amin: Math.max(rmin * bm.b * dS, quarter), Amax: 0.025 * bm.b * dS };
               const midReq = bm.MuMid ? reqTension(bm.MuMid * margin, pMid) : pMid.Amin;
-              const midBotB = isFinite(midReq) ? chooseBeamBars(midReq, bm.b, bm.cover, dLim) : null;
+              const midBotB = isFinite(midReq) ? chooseBeamBars(midReq, bm.b, bm.cover, dLim, 12, gapMax) : null;
               if (!midBotB) break;
               r = { topB, botB, midTopB, midBotB, ct: bm.cover + topB.shift, cb: bm.cover + Math.max(botB.shift, midBotB.shift) };
               break;
@@ -746,7 +751,7 @@
           const tr = { ...bm, coverTop: r.ct, coverBot: r.cb, top: r.topB.area, bot: r.botB.area, midTop: r.midTopB.area, midBot: r.midBotB.area,
             topBars: r.topB, botBars: r.botB, midBotBars: r.midBotB, maxDia: Math.max(r.topB.maxDia, r.botB.maxDia, r.midBotB.maxDia),
             minDia: Math.min(r.topB.minDia, r.botB.minDia), topText: r.topB.text, botText: r.botB.text, midTopText: r.midTopB.text, midBotText: r.midBotB.text };
-          const ev = evaluate({ ...s, beams: { ...s.beams, [dir]: tr } });
+          const ev = evaluate({ ...s, beams: { ...s.beams, [dir]: tr } }, "beams");
           const bad = ev.checks.filter((c) => c.step.endsWith(`Beam ${dir}`) && c.status === "fail");
           if (!bad.length) { s.beams[dir] = tr; return true; }
         }
@@ -768,6 +773,7 @@
     };
 
     // Least column steel (any practical layout) meeting P-M, spacing and SCWB.
+    const maxBeamDepth = () => Math.max(s.beams.X.present ? s.beams.X.D : 0, s.beams.Y.present ? s.beams.Y.D : 0);
     const designColumnSteel = () => {
       const cands = [];
       for (let nx = 2; nx <= 8; nx++) for (let ny = 2; ny <= 8; ny++) {
@@ -777,16 +783,25 @@
           const rho = b.Asc / (s.col.cx * s.col.cy);
           if (rho < 0.008 || rho > 0.04) continue;
           if (!columnSpacing(trial).ok) continue;
+          // laps must fit in the middle half of the clear height (Cl 7.3.2)
+          if (devLength(b.maxDia, s.mat.fy, s.mat.fck) > (s.col.hst - maxBeamDepth()) / 2) continue;
           cands.push({ trial, Asc: b.Asc });
         }
       }
       cands.sort((a, b) => a.Asc - b.Asc);
-      for (const c of cands) {
+      const passes = (c) => {
         const st = { ...s, col: c.trial, colAbove: s.colAbove && s.colAbove.same ? { same: true } : s.colAbove };
         const ev = evaluate(st);
-        const ok = ev.checks.filter((x) => (x.step === "4 Column" && /Biaxial|Steel ratio|spacing/.test(x.item)) || x.step.startsWith("5 SCWB") || /Column lap/.test(x.item)).every((x) => x.status !== "fail");
-        if (ok) return c.trial;
-      }
+        return ev.checks.filter((x) => (x.step === "4 Column" && /Biaxial|Steel ratio|spacing/.test(x.item)) || x.step.startsWith("5 SCWB") || /Column lap/.test(x.item)).every((x) => x.status !== "fail");
+      };
+      if (!cands.length) return null;
+      // If the heaviest options fail, no lighter one will: enlarge the column instead.
+      if (!cands.slice(-3).some(passes)) return null;
+      // Binary search for the lightest passing candidate, then confirm by a short linear scan.
+      let lo = 0, hi = cands.length - 1;
+      while (lo < hi) { const mid = (lo + hi) >> 1; if (passes(cands[mid])) hi = mid; else lo = mid + 1; }
+      for (let i = Math.max(0, lo - 4); i <= lo; i++) if (passes(cands[i])) return cands[i].trial;
+      for (const c of cands.slice(lo)) if (passes(c)) return c.trial;
       return null;
     };
 
